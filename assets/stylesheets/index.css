@@ -1,0 +1,52 @@
+/* display field in center of the screen */
+body {
+    display: flex;
+    justify-content: center;
+}
+
+/* line up columns next to each other */
+#field-container {
+    display: flex;
+}
+
+.column, .hold-column, .next-column {
+    padding: 0;
+}
+
+.column, .hold-box ul, .next-box ul {
+    margin: 0;
+}
+
+.column li, .hold-box li, .next-box li {
+list-style: none;
+    border: 1px #666666 solid;
+    background-color: #1a1a1a;
+    height: 30px;
+    width: 30px;
+    box-sizing: border-box;
+}
+
+/* hold box */
+.hold-box {
+    display: flex;
+    border: 2px red solid;
+    height: 80px;
+    margin-top: 30px;
+}
+
+/* next box */
+.next-boxes {
+    display: flex;
+    flex-direction: column;
+    margin-top: 30px;
+}
+
+.next-box {
+    display: flex;
+    border: 2px red solid;
+}
+
+.hold-box li, .next-box li {
+    height: 20px;
+    width: 20px;
+}
