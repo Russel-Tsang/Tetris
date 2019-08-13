@@ -12,24 +12,28 @@ export default class Field {
         return column;
     }
 
-    _createField(container) {
+    _createField() {
+        let field = document.createElement("div");
+        field.classList.add("field-box");
         for (let i = 0; i < 10; i++) {
-            container.appendChild(this._createColumn());
+            field.appendChild(this._createColumn());
         }
-        return container;
-    }
-
-    _createFieldWithHoldBox(container) {
-        let field = this._createField(container);
-        let holdBox = new HoldBox();
-        field.prepend(holdBox.createBox());
         return field;
     }
 
+    // _createHoldBox() {
+    //     let holdBox = new HoldBox();
+    //     field.prepend(holdBox.createBox());
+    //     return holdBox.create;
+    // }
+
     createFieldWithHoldBoxAndNextBoxes(container) {
-        let field = this._createFieldWithHoldBox(container);
         let nextBox = new NextBox();
-        field.append(nextBox.createNextBoxes());
+        let holdBox = new HoldBox();
+        container.append(this._createField());
+        container.append(nextBox.createNextBoxes());
+        container.prepend(holdBox.createBox());
+        return container;
     }
 
 }
