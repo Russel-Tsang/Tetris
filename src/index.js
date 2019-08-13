@@ -1,4 +1,4 @@
-import Field from './field';
+import Field from './field/field';
 
 document.addEventListener("DOMContentLoaded", () => {
     const fieldContainer = document.getElementById("field-container");
