@@ -1,22 +1,22 @@
 import Piece from './piece';
 
-export default class OPiece extends Piece {
+export default class SPiece extends Piece {
     constructor() {
         super();
-        this.name = "OPiece";
+        this.name = "SPiece";
         this.position = {
             top: [[0, 4], [0, 5]],
             middle: [],
-            bottom: [[1, 4],[1, 5]]
+            bottom: [[1, 3], [1, 4]]
         };
         this.basePosition = {
             top: [[0, 4], [0, 5]],
             middle: [],
-            bottom: [[1, 4],[1, 5]]
+            bottom: [[1, 3], [1, 4]]
         };
 
         this.removeSquares = [];
 
         debugger
     }
-} 
+}

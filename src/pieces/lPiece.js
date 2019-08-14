@@ -1,18 +1,18 @@
 import Piece from './piece';
 
-export default class IPiece extends Piece {
+export default class lPiece extends Piece {
     constructor() {
         super();
-        this.name = "IPiece";
+        this.name = "LPiece";
         this.position = {
-            top: [],
+            top: [[0, 5]],
             middle: [],
-            bottom: [[0, 3], [0, 4], [0, 5], [0, 6]]
+            bottom: [[1, 3], [1, 4], [1, 5]]
         };
         this.basePosition = {
-            top: [],
+            top: [[0, 5]],
             middle: [],
-            bottom: [[0, 3], [0, 4], [0, 5], [0, 6]]
+            bottom: [[1, 3], [1, 4], [1, 5]]
         };
 
         this.removeSquares = [];
