@@ -1,7 +1,13 @@
+import Game from './game/game';
 import Field from './field/field';
 
 document.addEventListener("DOMContentLoaded", () => {
     const fieldContainer = document.getElementById("field-container");
-    let gameField = new Field();
-    gameField.createFieldWithHoldBoxAndNextBoxes(fieldContainer);
+
+    let field = new Field();
+    field.createFieldWithHoldBoxAndNextBoxes(fieldContainer);
+
+    let game = new Game();
+    game.play(fieldContainer);
+
 });
