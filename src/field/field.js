@@ -1,10 +1,21 @@
 import HoldBox from './holdbox';
 import NextBox from './nextBox';
 
-export default class Field {
+export default class Field {    
+    _generateField() {
+        let field = [];
+        for (let i = 0; i < 20; i++) {
+            let row = [0,0,0,0,0,0,0,0,0,0];
+            field.push(row);
+        }
+        return field;
+    }
+
+    //_isValidMove
+
     _createColumn() {
         let column = document.createElement("ul");
-        column.classList.add("column");
+        column.classList.add("field-column");
 
         for (let i = 0; i < 20; i++) {
             column.append(document.createElement("li"));
@@ -20,12 +31,6 @@ export default class Field {
         }
         return field;
     }
-
-    // _createHoldBox() {
-    //     let holdBox = new HoldBox();
-    //     field.prepend(holdBox.createBox());
-    //     return holdBox.create;
-    // }
 
     createFieldWithHoldBoxAndNextBoxes(container) {
         let nextBox = new NextBox();
