@@ -59,13 +59,29 @@ list-style: none;
 
 /* square colors */
 .yellow {
-    background: yellow;
+    background: #f0f000;
 }
 
 .blue {
-    background: #02e9e9;
+    background: #00f0f0;
+}
+
+.dark-blue {
+    background: #022ff0;
 }
 
 .purple {
-    background: #9b33e9;
+    background: #9f35f0;
+}
+
+.green {
+    background: #00f000;
+}
+
+.red {
+    background: #f02300;
+}
+
+.orange {
+    background: #f0a000;
 }
