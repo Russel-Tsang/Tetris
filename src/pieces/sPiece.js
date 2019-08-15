@@ -9,14 +9,8 @@ export default class SPiece extends Piece {
             middle: [],
             bottom: [[1, 3], [1, 4]]
         };
-        this.basePosition = {
-            top: [[0, 4], [0, 5]],
-            middle: [],
-            bottom: [[1, 3], [1, 4]]
-        };
+        this.turningPoint = [1, 4];
 
         this.removeSquares = [];
-
-        debugger
     }
 }

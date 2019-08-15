@@ -9,12 +9,12 @@ export default class IPiece extends Piece {
             middle: [],
             bottom: [[0, 3], [0, 4], [0, 5], [0, 6]]
         };
-        this.basePosition = {
-            top: [],
-            middle: [],
-            bottom: [[0, 3], [0, 4], [0, 5], [0, 6]]
-        };
+        this.turningPoint = [0, 4];
 
         this.removeSquares = [];
     }
+
+
 }
+
+
