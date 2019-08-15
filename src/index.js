@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
     field.createFieldWithHoldBoxAndNextBoxes(fieldContainer);
 
     let game = new Game();
+    game.keyListener();
     game.play(fieldContainer);
 
 });
