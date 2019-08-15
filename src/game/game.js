@@ -20,7 +20,10 @@ export default class Game {
             6: "orange",
             7: "dark-blue"
         }
-
+        // test
+        // let tPiece = new TPiece();
+        // this.currentPiece = tPiece;
+        // test
         // use slice to prevent shallow cloning
         this.currentPiece = '';
         this.currentBag = this._shuffleBag(this._generateBag());
@@ -41,7 +44,6 @@ export default class Game {
 
     // take piece from currentBag and set it as the current piece
     _setCurrentPiece() {
-        debugger
         this.currentPiece = this.currentBag.shift();
     }
 
@@ -105,34 +107,60 @@ export default class Game {
     }
 
     handlePieceStop(clear) {
-        debugger
         clearInterval(clear)
         this.play()
+    }
+
+    keyListener() {
+        document.body.addEventListener("keydown", event => {
+            console.log(event);
+            this.currentPiece.setLeftMostAndRightMost();
+            switch(event.which) {
+                // up key
+                case 38:
+                    this.currentPiece.move("up");
+                    break;
+                // right key
+                case 39:
+                    if (this.currentPiece.rightSideNextToBlock(this.field)) break;
+                    this.currentPiece.move("right");
+                    break;
+                // down key
+                case 40:
+                    if (!this.currentPiece.isFalling(this.field)) break;
+                    this.currentPiece.move("down");
+                    break;
+                // left key
+                case 37:
+                    if (this.currentPiece.leftSideNextToBlock(this.field)) break;
+                    this.currentPiece.move("left");
+                    break;
+                // space bar
+                // case 32:
+                //     this.currentPiece.hardDrop();
+            }
+            this.currentPiece.setLeftMostAndRightMost();
+            this.currentPiece._populateField(this.field);
+            this.render();
+        });
     }
     
     play() {
         // let jPiece = new JPiece();
         this._setCurrentPiece();
+        this.currentPiece.hangingSquares();
         this._addToCurrentBag();
-        debugger
         if (!this.nextBag.length) this._refillNextBag();
         
         let clear = setInterval(() => {
-            this.currentPiece.drop();
+            // console.log(this.currentPiece.leftMost)
             this.currentPiece._populateField(this.field);
             this.render();
-            if (!this.currentPiece.isFalling(this.field)) {
-                debugger
-                this.handlePieceStop(clear);
-            }
-        }, 1000);
-        
-        // while (!gameOver) {
-            // this.currentPiece = this.setCurrentPiece; (takes from next pieces)
-            // this.currentBag = this.setCurrentBag; (takes one from next bag)
-            // this.nextBag = this.resetBag (if nextBag is empty)
-            // this.nextPieces = this.setNextPieces;
-        // }
+            if (!this.currentPiece.isFalling(this.field)) this.handlePieceStop(clear);
+            this.currentPiece.drop();
+            this.currentPiece._populateField(this.field); // keep only one populate field?
+            this.render();
+        }, 800);
     }
 
 }
