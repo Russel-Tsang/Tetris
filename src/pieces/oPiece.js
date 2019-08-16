@@ -9,7 +9,9 @@ export default class OPiece extends Piece {
             middle: [],
             bottom: [[1, 4],[1, 5]]
         };
+        this.colorCode = 1;
         this.turningPoint = [1, 4];
+        this.displaySquares = [[1, 1], [2, 1], [1, 2], [2, 2]];
 
         this.removeSquares = [];
     }
