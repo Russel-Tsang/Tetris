@@ -20,14 +20,14 @@ export default class Game {
             6: "orange",
             7: "dark-blue"
         }
-        // test
-        // let tPiece = new TPiece();
-        // this.currentPiece = tPiece;
-        // test
-        // use slice to prevent shallow cloning
         this.currentPiece = '';
+        this.holdPiece = '';
         this.currentBag = this._shuffleBag(this._generateBag());
         this.nextBag = this._shuffleBag(this._generateBag());
+        // prevents player from holding piece multiple times
+        this.canHold = true;
+
+        this.clearHandle;
     }
 
     _generateBag() {
@@ -47,9 +47,102 @@ export default class Game {
         this.currentPiece = this.currentBag.shift();
     }
 
+    // hold piece for later use 
+    hold() {
+        if (!this.canHold) return;
+
+        this.currentPiece.clearFromBoard(this.field); 
+
+        this.render();
+
+        if (this.holdPiece === '') {
+            // pass current piece name into generate piece in order to generate a new piece instance
+            this.holdPiece = this._generatePiece(this.currentPiece.name);
+            this._setCurrentPiece();
+            // re-render next boxes to appropriately show current bag
+            this._showCurrentBag();
+        } else {
+            this.currentPiece = this._generatePiece(this.currentPiece.name);
+            [this.currentPiece, this.holdPiece] = [this.holdPiece, this.currentPiece];
+        }
+        this.canHold = false;
+
+        this._populateHoldBox();
+    }
+
+    _populateHoldBox() {
+        let columns = document.querySelector(".hold-box").children;
+
+        // remove colors from previous pieces
+        for (let i = 0; i < 5; i++) {
+            for (let j = 0; j < 4; j++) {
+                // columns.children is nodelist of <lis>
+                columns[i].children[j].className = "";
+            }
+        }
+
+        this.holdPiece.displaySquares.forEach(square => {
+            let [col, row] = [square[0], square[1]];
+            columns[col].children[row].classList.add(this.colors[this.holdPiece.colorCode]);
+        })
+
+    }
+
+    // used for this.hold(): generate a new piece so that a holdpiece that is re-rendered on the board will not start from the old position
+    _generatePiece(pieceName) {
+        switch(pieceName) {
+            case "TPiece":
+                return new TPiece;
+                break;
+            case "OPiece":
+                return new OPiece;
+                break;
+            case "IPiece":
+                return new IPiece;
+                break;
+            case "LPiece":
+                return new LPiece;
+                break;
+            case "JPiece":
+                return new JPiece;
+                break;
+            case "SPiece":
+                return new SPiece;
+                break;
+            case "ZPiece":
+                return new ZPiece;
+                break;
+        }
+    }
+
     // take one piece from nextBag and add to currentBag
     _addToCurrentBag() {
         this.currentBag.push(this.nextBag.shift());
+    }
+
+    _showCurrentBag() {
+        let boxes = document.getElementsByClassName("next-box");
+        for (let i = 0; i < 5; i++) {
+            this._populateNextBox(boxes[i], this.currentBag[i]);
+        }
+    }
+
+    _populateNextBox(box, piece) {
+        // columns is nodelist of <uls>
+        let columns = box.children;
+
+        // remove colors from previous pieces
+        for (let i = 0; i < 5; i++) {
+            for (let j = 0; j < 4; j++) {
+                // columns.children is nodelist of <lis>
+                columns[i].children[j].className = "";
+            }
+        }
+
+        piece.displaySquares.forEach(square => {
+            let [col, row] = [square[0], square[1]];
+            columns[col].children[row].classList.add(this.colors[piece.colorCode]);
+        })
     }
 
     // refill next bag, will only be called once nextBag becomes empty
@@ -106,11 +199,6 @@ export default class Game {
         });
     }
 
-    handlePieceStop(clear) {
-        clearInterval(clear)
-        this.play()
-    }
-
     keyListener() {
         document.body.addEventListener("keydown", event => {
             console.log(event);
@@ -135,32 +223,79 @@ export default class Game {
                     if (this.currentPiece.leftSideNextToBlock(this.field)) break;
                     this.currentPiece.move("left");
                     break;
+                // shift key
+                case 16: 
+                    console.log(this);
+                    this.hold();
+                    break;
                 // space bar
-                // case 32:
-                //     this.currentPiece.hardDrop();
+                case 32:
+                    this.currentPiece.hardDrop(this.field);
+                    this.currentPiece._populateField(this.field);
+                    this.handlePieceStop(this.clearHandle);
+                    break;
             }
+            console.log(this.currentPiece);
             this.currentPiece.setLeftMostAndRightMost();
             this.currentPiece._populateField(this.field);
             this.render();
         });
     }
+
+    clearLines(lowest, highest) {
+        // base case: if we reach a row that is higher than the highest, then exit
+        if (lowest < highest) return;
+        // recursive case: 
+        // if lowest row does not contain a 0, bring all above rows down one level
+        debugger
+        if (!this.field[lowest].includes(0)) {
+            this._bringDownField(lowest);
+            // call recursiveClear(lowest, highest + 1);
+            this.clearLines(lowest, highest + 1)
+        // if row contains a 0 
+        // call ClearLines(lowest - 1, highest)
+        } else if (this.field[lowest].includes(0)) {
+            this.clearLines(lowest - 1, highest);
+        }
+    }
+
+    _bringDownField(startingRow) {
+        debugger
+        for (let i = startingRow; i > 0; i--) {
+            this.field[i] = this.field[i - 1];
+        }
+        this.field[0] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        debugger
+    }
+
+    handlePieceStop(clear) {
+        // allow player to hold piece again
+        this.canHold = true;
+        let lowest = this.currentPiece.position.bottom[0][0];
+        // in case of line piece, which may not have this.position.top
+        let highest = !this.currentPiece.position.top.length ? lowest : this.currentPiece.position.top[0][0];
+        debugger
+        this.clearLines(lowest, highest);
+        clearInterval(clear);
+        this.play();
+    }
     
     play() {
-        // let jPiece = new JPiece();
         this._setCurrentPiece();
-        this.currentPiece.hangingSquares();
         this._addToCurrentBag();
+        this._showCurrentBag();
         if (!this.nextBag.length) this._refillNextBag();
         
         let clear = setInterval(() => {
-            // console.log(this.currentPiece.leftMost)
+            console.log(this.currentPiece.position);
+            this.clearHandle = clear;
             this.currentPiece._populateField(this.field);
             this.render();
             if (!this.currentPiece.isFalling(this.field)) this.handlePieceStop(clear);
             this.currentPiece.drop();
             this.currentPiece._populateField(this.field); // keep only one populate field?
             this.render();
-        }, 800);
+        }, 200);
     }
 
 }
