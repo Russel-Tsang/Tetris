@@ -25,29 +25,7 @@ export default class Piece {
         coordinateArrays.forEach(array => {
             array.forEach(coordinate => {
                 let [row, col] = [coordinate[0], coordinate[1]];
-                switch (this.name) {
-                    case("OPiece"): 
-                        field[row][col] = 1;
-                        break;
-                    case("IPiece"): 
-                        field[row][col] = 2;
-                        break;
-                    case("TPiece"):
-                        field[row][col] = 3;
-                        break;
-                    case("SPiece"):
-                        field[row][col] = 4;
-                        break;
-                    case ("ZPiece"):
-                        field[row][col] = 5;
-                        break;
-                    case ("LPiece"):
-                        field[row][col] = 6;
-                        break;
-                    case ("JPiece"):
-                        field[row][col] = 7;
-                        break;
-                }
+                field[row][col] = this.colorCode;
             })
         });
 
@@ -91,9 +69,33 @@ export default class Piece {
         this.setRemoveSquares(oldPosition);
     }
 
-    // hardDrop() {
+    hardDrop(field) {
+        this.clearFromBoard(field);
+        let stopped = false;
+        while(!stopped) {
+            let hangingSquares = this.hangingSquares();
+            hangingSquares.forEach(coordinate => {
+                let [row, col] = [coordinate[0], coordinate[1]];
+                if (row + 1 === 20 || field[row + 1][col]) stopped = true;
+            }); 
+            if (stopped) {
+                debugger
+                break;
+            }
+            this.position.top = this.position.top.map(array => [array[0] + 1, array[1]]);
+            this.position.middle = this.position.middle.map(array => [array[0] + 1, array[1]]);
+            this.position.bottom = this.position.bottom.map(array => [array[0] + 1, array[1]]);
+        }
+    }
 
-    // }
+    clearFromBoard(field) {
+        Object.values(this.position).forEach(coordinateArrays => coordinateArrays.forEach(coordinate => {
+            let row = coordinate[0];
+            let col = coordinate[1];
+            field[row][col] = 0;
+        }));
+        debugger
+    }
 
     move(direction) {
         let oldPosition = {
