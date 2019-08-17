@@ -9,7 +9,7 @@ import JPiece from '../pieces/jPiece';
 
 export default class Game {
     constructor() {
-        this.field = this._setField()
+        this.field = this.setField()
 
         this.colors = {
             1: "yellow",
@@ -20,37 +20,70 @@ export default class Game {
             6: "orange",
             7: "dark-blue"
         }
-        this.currentBag = this._shuffleBag(this._generateBag());
+
+        this.currentBag = this._shuffleBag(this.generateBag());
         this.currentPiece = '';
         this.holdPiece = '';
         this.ghostPosition = '';
-        this.nextBag = this._shuffleBag(this._generateBag());
+        this.nextBag = this._shuffleBag(this.generateBag());
 
         // prevents player from holding piece multiple times
         this.canHold = true;
 
-        this.clearHandle;
+        this.handleClear = {
+            drop: '',
+            right: '',
+            left: '',
+            down: ''
+        };
 
         // for animations
+        this.dropSpeed = 1.5;
+        this.moveSpeed = 20;
         this.dropPiece = this.dropPiece.bind(this);
         this.drop = this.drop.bind(this);
-        this.fps = '';
-        this.fpsInterval = '';
-        this.startTime = '';
-        this.now = '';
-        this.then = '';
+        this.move = this.move.bind(this);
+        this.movePiece = this.movePiece.bind(this);
 
+        // keep track of the following variables for requestAnimationFrame throttling
+        this.animate = {
+            drop: {
+                fpsInterval: '',
+                startTime: '',
+                now: '',
+                then: ''
+            },
+            right: {
+                fpsInterval: '',
+                startTime: '',
+                now: '',
+                then: ''
+            },
+            left: {
+                fpsInterval: '',
+                startTime: '',
+                now: '',
+                then: ''
+            },
+            down: {
+                fpsInterval: '',
+                startTime: '',
+                now: '',
+                then: ''
+            }
+        }
+
+        // pausing the game
         this.isPaused = false;
 
-        // for key-holding
         this.keyHeld = {
-            'downKey': false,
-            'leftKey': false,
-            'rightKey': false
+            down: false,
+            right: false,
+            left: false
         }
     }
 
-    _generateBag() {
+    generateBag() {
         let oPiece = new OPiece();
         let iPiece = new IPiece();
         let tPiece = new TPiece();
@@ -62,17 +95,17 @@ export default class Game {
         return [oPiece, iPiece, tPiece, sPiece, zPiece, lPiece, jPiece];
     }
 
-    _setField() {
+    setField() {
         let field = new Field();
         return field._generateField();
     }
 
     // take piece from currentBag and set it as the current piece
-    _setCurrentPiece() {
+    setCurrentPiece() {
         this.currentPiece = this.currentBag.shift();
     }
 
-    // removes old ghost position before switching to a new one
+    // removes old ghost position from this.field before changing piece position
     clearGhostPosition() {
         let coordinateArrays = Object.values(this.ghostPosition);
 
@@ -84,6 +117,7 @@ export default class Game {
         });
     }
 
+    // clears the color classes from the browser field
     clearGhostClass() {
         let fieldColumns = document.querySelectorAll(".field-column");
         let coordinateArrays = Object.values(this.ghostPosition);
@@ -96,6 +130,7 @@ export default class Game {
         });
     }
 
+    // find appropriate ghost position as piece position changes
     setGhostPosition() {
         let ghostPosition = {
             top: this.currentPiece.position.top.map(coordinate => coordinate.slice()),
@@ -119,6 +154,7 @@ export default class Game {
         this._populateGhostPosition();
     }
 
+    // populate this.field with 'x' wherever the ghost position is calculated to be
     _populateGhostPosition() {
         let coordinateArrays = Object.values(this.ghostPosition);
 
@@ -131,6 +167,7 @@ export default class Game {
         this.render();
     }
 
+    // populates this.field with the appropriate current piece colorCode, while setting previous piece positions to 0
     populateField(piece) {
         let coordinateArrays = Object.values(piece.position);
         coordinateArrays.forEach(array => {
@@ -149,15 +186,13 @@ export default class Game {
     // hold piece for later use 
     hold() {
         if (!this.canHold) return;
-
         this.currentPiece.clearSelfFromBoard(this.field); 
-
         this.render();
 
         if (this.holdPiece === '') {
             // pass current piece name into generate piece in order to generate a new piece instance
             this.holdPiece = this._generatePiece(this.currentPiece.name);
-            this._setCurrentPiece();
+            this.setCurrentPiece();
             // re-render next boxes to appropriately show current bag
             this._showCurrentBag();
         } else {
@@ -239,7 +274,7 @@ export default class Game {
 
     // refill next bag, will only be called once nextBag becomes empty
     _refillNextBag() {
-        this.nextBag = this._generateBag();
+        this.nextBag = this.generateBag();
     }
 
     // implementation of shuffle found on https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array#2450976
@@ -289,11 +324,12 @@ export default class Game {
     keyListener() {
         document.body.addEventListener("keydown", event => {
             this.currentPiece.setLeftMostAndRightMost();
-            this.clearGhostPosition();
+            // this.clearGhostPosition();
             switch(event.which) {
                 // up key
                 case 38:
                     // pass field so piece can check field wall before turning
+                    this.clearGhostPosition();
                     this.currentPiece.move("up", this.field);
                     this.populateField(this.currentPiece);
                     this.setGhostPosition();
@@ -301,42 +337,40 @@ export default class Game {
                 // C key
                 case 67:
                     // pass field so piece can check field wall before turning
+                    this.clearGhostPosition();
                     this.currentPiece.move("C", this.field);
-                    this.populateField(this.currentPiece);
-                    this.setGhostPosition();
-                    break;
-                // right key
-                case 39:
-                    if (this.currentPiece.rightSideBlocked(this.field)){
-                        this.setGhostPosition();
-                        break;
-                    }
-                    // this.keyHeld.rightKey = true; 
-                    // while (this.keyHeld.rightKey) {
-                        this.currentPiece.move("right");
-                        this.populateField(this.currentPiece);
-                        this.setGhostPosition();
-                    //     break;
-                    // }
-                // down key
-                case 40:
-                    if (!this.currentPiece.isFalling(this.field)) break;
-                    this.currentPiece.move("down");
                     this.populateField(this.currentPiece);
                     this.setGhostPosition();
                     break;
                 // left key
                 case 37:
+                    this.keyHeld.left = true;
                     if (this.currentPiece.leftSideBlocked(this.field)){
+                        this.clearGhostPosition();
                         this.setGhostPosition();
                         break;
                     } 
-                    this.currentPiece.move("left");
-                    this.populateField(this.currentPiece);
-                    this.setGhostPosition();
+                    this.movePiece(this.moveSpeed, "left");
+                    break;
+                // right key
+                case 39:
+                    this.keyHeld.right = true;
+                    if (this.currentPiece.rightSideBlocked(this.field)){
+                        this.clearGhostPosition();
+                        this.setGhostPosition();
+                        break;
+                    }
+                    this.movePiece(this.moveSpeed, "right");
+                    break;
+                // down key
+                case 40:
+                    // if (!this.currentPiece.isFalling(this.field)) break;
+                    this.keyHeld.down = true;
+                    this.movePiece(this.moveSpeed, "down");
                     break;
                 // shift key
                 case 16: 
+                    this.clearGhostPosition();
                     this.hold();
                     this.populateField(this.currentPiece);
                     this.setGhostPosition();
@@ -344,20 +378,22 @@ export default class Game {
                 // space bar
                 case 32:
                     // this.render();
+                    this.clearGhostPosition();
                     this.currentPiece.hardDrop(this.field);
                     this.render();
                     this.populateField(this.currentPiece);
-                    this.handlePieceStop(this.clearHandle);
+                    this.handlePieceStop(this.handleClear.drop);
                     break;
                 // P key
                 case 80:
                     // this.render();
-                    this.isPaused ? this.dropPiece(1.5) : cancelAnimationFrame(this.clearHandle);
+                    this.isPaused ? this.dropPiece(this.dropSpeed) : cancelAnimationFrame(this.handleClear.drop);
                     this.isPaused = !this.isPaused;
                     this.setGhostPosition();
                     break;
                 default:
-                    this.setGhostPosition();
+                    // this.setGhostPosition();
+                    break;
             }
             this.currentPiece.setLeftMostAndRightMost();
             // messes up with piece color
@@ -368,9 +404,14 @@ export default class Game {
         document.body.addEventListener("keyup", event => {
             switch (event.which) {
                 case 39: 
-                    console.log("here!")
-                    this.keyHeld.rightKey = false;
+                    this.keyHeld.right = false;
                     break;
+                case 37: 
+                    this.keyHeld.left = false;
+                    break;
+                case 40: 
+                    this.keyHeld.down = false;
+                    break;  
             }
         });
     }
@@ -406,40 +447,81 @@ export default class Game {
         let highest = !this.currentPiece.position.top.length ? lowest : this.currentPiece.position.top[0][0];
         this.clearLines(lowest, highest);
         this.clearGhostClass();
-        cancelAnimationFrame(this.clearHandle);
+        cancelAnimationFrame(this.handleClear.drop);
         this.play();
     }
 
     dropPiece(fps) {
         // Do whatever
-        this.fpsInterval = 1000 / fps;
-        this.then = Date.now();
-        this.startTime = this.then;
+        this.animate.drop.fpsInterval = 1000 / fps;
+        this.animate.drop.then = Date.now();
+        this.animate.drop.startTime = this.then;
         this.drop();
     }
 
     // inspiration for throttling requestAnimationFrame from https://stackoverflow.com/questions/19764018/controlling-fps-with-requestanimationframe
     drop() {
-        this.clearHandle = requestAnimationFrame(this.drop);
-        this.now = Date.now();
-        let elapsed = this.now - this.then;
-        if (elapsed > this.fpsInterval) {
+        this.handleClear.drop = requestAnimationFrame(this.drop);
+        this.animate.drop.now = Date.now();
+        let elapsed = this.animate.drop.now - this.animate.drop.then;
+        if (elapsed > this.animate.drop.fpsInterval) {
             // Get ready for next frame by setting then=now, adjusting for specified fpsInterval not being a multiple of RAF's interval (16.7ms)
-            this.then = this.now - (elapsed % this.fpsInterval);
-
+            this.animate.drop.then = this.animate.drop.now - (elapsed % this.animate.drop.fpsInterval);
             this.populateField(this.currentPiece);
             this.render();
             if (!this.currentPiece.isFalling(this.field)) {
-                this.handlePieceStop(this.clearHandle);
+                this.handlePieceStop(this.handleClear.drop);
             }
             this.currentPiece.drop();
             this.populateField(this.currentPiece); // keep only one populate field?
             this.render();
         }
     }
+
+    movePiece(fps, direction) {
+        // Do whatever
+        this.animate[direction].fpsInterval = 1000 / fps;
+        this.animate[direction].then = Date.now();
+        this.animate[direction].startTime = this.animate[direction].then;
+        this.move(direction);
+    }
+
+    // inspiration for throttling requestAnimationFrame from https://stackoverflow.com/questions/19764018/controlling-fps-with-requestanimationframe
+    move(direction) {
+        this.handleClear[direction] = requestAnimationFrame(() => this.move(direction));
+        if (!this.keyHeld[direction]) cancelAnimationFrame(this.handleClear[direction]);
+        this.animate[direction].now = Date.now();
+        let elapsed = this.animate[direction].now - this.animate[direction].then;
+        if (elapsed > this.animate[direction].fpsInterval) {
+            // Get ready for next frame by setting then=now, adjusting for specified fpsInterval not being a multiple of RAF's interval (16.7ms)
+            this.animate[direction].then = this.animate[direction].now - (elapsed % this.animate[direction].fpsInterval);
+
+            this.clearGhostPosition();
+            // prevent piece from moving if it is blocked or if both left and right arrow keys are held down
+            if (
+                direction === "right" && this.currentPiece.rightSideBlocked(this.field) 
+                || 
+                direction === "left" && this.currentPiece.leftSideBlocked(this.field) 
+                || 
+                direction === "down" && !this.currentPiece.isFalling(this.field)
+                || 
+                this.keyHeld.right && this.keyHeld.left
+            ) { 
+                this.clearGhostPosition();
+                this.setGhostPosition();
+                return; 
+            }
+
+            this.currentPiece.move(direction);
+            this.populateField(this.currentPiece);
+            this.setGhostPosition();
+            this.render();
+            // break;
+        }
+    }
     
     play() {
-        this._setCurrentPiece();
+        this.setCurrentPiece();
         this.populateField(this.currentPiece);
         this._addToCurrentBag();
         this._showCurrentBag();
