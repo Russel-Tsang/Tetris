@@ -25,10 +25,23 @@ export default class Game {
         this.holdPiece = '';
         this.ghostPosition = '';
         this.nextBag = this._shuffleBag(this._generateBag());
+
         // prevents player from holding piece multiple times
         this.canHold = true;
 
         this.clearHandle;
+
+        // for animations
+        this.dropPiece = this.dropPiece.bind(this);
+        this.drop = this.drop.bind(this);
+        this.fps = '';
+        this.fpsInterval = '';
+        this.startTime = '';
+        this.now = '';
+        this.then = '';
+
+        this.isPaused = false;
+
     }
 
     _generateBag() {
@@ -269,7 +282,6 @@ export default class Game {
 
     keyListener() {
         document.body.addEventListener("keydown", event => {
-            console.log(event);
             this.currentPiece.setLeftMostAndRightMost();
             this.clearGhostPosition();
             switch(event.which) {
@@ -280,9 +292,19 @@ export default class Game {
                     this.populateField(this.currentPiece);
                     this.setGhostPosition();
                     break;
+                // C key
+                case 67:
+                    // pass field so piece can check field wall before turning
+                    this.currentPiece.move("C", this.field);
+                    this.populateField(this.currentPiece);
+                    this.setGhostPosition();
+                    break;
                 // right key
                 case 39:
-                    if (this.currentPiece.rightSideBlocked(this.field)) break;
+                    if (this.currentPiece.rightSideBlocked(this.field)){
+                        this.setGhostPosition();
+                        break;
+                    } 
                     this.currentPiece.move("right");
                     this.populateField(this.currentPiece);
                     this.setGhostPosition();
@@ -296,7 +318,10 @@ export default class Game {
                     break;
                 // left key
                 case 37:
-                    if (this.currentPiece.leftSideBlocked(this.field)) break;
+                    if (this.currentPiece.leftSideBlocked(this.field)){
+                        this.setGhostPosition();
+                        break;
+                    } 
                     this.currentPiece.move("left");
                     this.populateField(this.currentPiece);
                     this.setGhostPosition();
@@ -314,6 +339,13 @@ export default class Game {
                     this.render();
                     this.populateField(this.currentPiece);
                     this.handlePieceStop(this.clearHandle);
+                    break;
+                // P key
+                case 80:
+                    // this.render();
+                    this.isPaused ? this.dropPiece(1.5) : cancelAnimationFrame(this.clearHandle);
+                    this.isPaused = !this.isPaused;
+                    this.setGhostPosition();
                     break;
                 default:
                     this.setGhostPosition();
@@ -357,8 +389,36 @@ export default class Game {
         let highest = !this.currentPiece.position.top.length ? lowest : this.currentPiece.position.top[0][0];
         this.clearLines(lowest, highest);
         this.clearGhostClass();
-        clearInterval(clear);
+        cancelAnimationFrame(this.clearHandle);
         this.play();
+    }
+
+    dropPiece(fps) {
+        // Do whatever
+        this.fpsInterval = 1000 / fps;
+        this.then = Date.now();
+        this.startTime = this.then;
+        this.drop();
+    }
+
+    // inspiration for throttling requestAnimationFrame from https://stackoverflow.com/questions/19764018/controlling-fps-with-requestanimationframe
+    drop() {
+        this.clearHandle = requestAnimationFrame(this.drop);
+        this.now = Date.now();
+        let elapsed = this.now - this.then;
+        if (elapsed > this.fpsInterval) {
+            // Get ready for next frame by setting then=now, adjusting for specified fpsInterval not being a multiple of RAF's interval (16.7ms)
+            this.then = this.now - (elapsed % this.fpsInterval);
+
+            this.populateField(this.currentPiece);
+            this.render();
+            if (!this.currentPiece.isFalling(this.field)) {
+                this.handlePieceStop(this.clearHandle);
+            }
+            this.currentPiece.drop();
+            this.populateField(this.currentPiece); // keep only one populate field?
+            this.render();
+        }
     }
     
     play() {
@@ -368,18 +428,8 @@ export default class Game {
         this._showCurrentBag();
         if (!this.nextBag.length) this._refillNextBag();
         this.setGhostPosition();
-        
-        let clear = setInterval(() => {
-            this.clearHandle = clear;
-            this.populateField(this.currentPiece);
-            this.render();
-            if (!this.currentPiece.isFalling(this.field)) {
-                this.handlePieceStop(clear);
-            }   
-            this.currentPiece.drop();
-            this.populateField(this.currentPiece); // keep only one populate field?
-            this.render();
-        }, 1000);
+        // drop piece at 4 fps
+        this.dropPiece(1.5);
     }
 
 }

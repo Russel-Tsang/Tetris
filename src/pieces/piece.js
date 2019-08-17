@@ -123,6 +123,9 @@ export default class Piece {
                 this.position.bottom = this.position.bottom.map(array => [array[0] + 1, array[1]]);
                 this.turningPoint = [this.turningPoint[0] + 1, this.turningPoint[1]];
                 break;
+            case "C":
+                this.turnLeft(field);
+                break;
         }
         this.setRemoveSquares(oldPosition);
     }
@@ -145,6 +148,45 @@ export default class Piece {
                     break;
                 case column = this.leftMost:
                     this.position.top.push([newRow, newCol]);
+                    break;
+                default:
+                    this.position.middle.push([newRow, newCol]);
+                    break;
+            }
+        })
+        // find left and right most squares to see if piece through wall
+        // if through wall, push piece back into field
+        this.setLeftMostAndRightMost();
+        
+        while (this.rightMost > 9 || this.leftMost < 0) {
+            this.rightMost > 9 ? this.move('left') : this.move('right');
+            this.setLeftMostAndRightMost();
+        }
+
+        // in the case that the IPiece is turned through the field ceiling
+        if (this.position.top.length) {
+            while (this.position.top[0][0] < 0) this.move('down');
+        }
+    }
+
+    turnLeft(field) {
+        let squares = [];
+        Object.values(this.position).forEach(coordinatesArray => squares.push(...coordinatesArray));
+        this.position.top = [];
+        this.position.middle = [];
+        this.position.bottom = [];
+        squares.forEach(square => {
+            let column = square[1];
+            let heightDifference = this.turningPoint[0] - square[0];
+            let widthDifference = this.turningPoint[1] - square[1];
+            let newCol = this.turningPoint[1] - heightDifference;
+            let newRow = this.turningPoint[0] - (widthDifference * -1);
+            switch (column) {
+                case column = this.rightMost:
+                    this.position.top.push([newRow, newCol]);
+                    break;
+                case column = this.leftMost:
+                    this.position.bottom.push([newRow, newCol]);
                     break;
                 default:
                     this.position.middle.push([newRow, newCol]);
