@@ -20,9 +20,10 @@ export default class Game {
             6: "orange",
             7: "dark-blue"
         }
+        this.currentBag = this._shuffleBag(this._generateBag());
         this.currentPiece = '';
         this.holdPiece = '';
-        this.currentBag = this._shuffleBag(this._generateBag());
+        this.ghostPosition = '';
         this.nextBag = this._shuffleBag(this._generateBag());
         // prevents player from holding piece multiple times
         this.canHold = true;
@@ -42,16 +43,95 @@ export default class Game {
         return [oPiece, iPiece, tPiece, sPiece, zPiece, lPiece, jPiece];
     }
 
+    _setField() {
+        let field = new Field();
+        return field._generateField();
+    }
+
     // take piece from currentBag and set it as the current piece
     _setCurrentPiece() {
         this.currentPiece = this.currentBag.shift();
+    }
+
+    // removes old ghost position before switching to a new one
+    clearGhostPosition() {
+        let coordinateArrays = Object.values(this.ghostPosition);
+
+        coordinateArrays.forEach(array => {
+            array.forEach(coordinate => {
+                let [row, col] = [coordinate[0], coordinate[1]];
+                this.field[row][col] = 0;
+            })
+        });
+    }
+
+    clearGhostClass() {
+        let fieldColumns = document.querySelectorAll(".field-column");
+        let coordinateArrays = Object.values(this.ghostPosition);
+
+        coordinateArrays.forEach(array => {
+            array.forEach(coordinate => {
+                let [row, col] = [coordinate[0], coordinate[1]];
+                fieldColumns[col].children[row].classList = this.colors[this.currentPiece.colorCode];
+            })
+        });
+    }
+
+    setGhostPosition() {
+        let ghostPosition = {
+            top: this.currentPiece.position.top.map(coordinate => coordinate.slice()),
+            middle: this.currentPiece.position.middle.map(coordinate => coordinate.slice()),
+            bottom: this.currentPiece.position.bottom.map(coordinate => coordinate.slice())
+        }
+
+        let stopped = false;
+        while (!stopped) {
+            let hangingSquares = this.currentPiece.hangingSquares(ghostPosition);
+            hangingSquares.forEach(coordinate => {
+                let [row, col] = [coordinate[0], coordinate[1]];
+                if (row + 1 === 20 || this.field[row + 1][col]) stopped = true;
+            });
+            if (stopped) break;
+            ghostPosition.top = ghostPosition.top.map(array => [array[0] + 1, array[1]]);
+            ghostPosition.middle = ghostPosition.middle.map(array => [array[0] + 1, array[1]]);
+            ghostPosition.bottom = ghostPosition.bottom.map(array => [array[0] + 1, array[1]]);
+        }
+        this.ghostPosition = ghostPosition;
+        this._populateGhostPosition();
+    }
+
+    _populateGhostPosition() {
+        let coordinateArrays = Object.values(this.ghostPosition);
+
+        coordinateArrays.forEach(array => {
+            array.forEach(coordinate => {
+                let [row, col] = [coordinate[0], coordinate[1]];
+                this.field[row][col] = "x";
+            })
+        });
+        this.render();
+    }
+
+    populateField(piece) {
+        let coordinateArrays = Object.values(piece.position);
+        coordinateArrays.forEach(array => {
+            array.forEach(coordinate => {
+                let [row, col] = [coordinate[0], coordinate[1]];
+                this.field[row][col] = piece.colorCode;
+            })
+        });
+
+        piece.removeSquares.forEach(positionArray => {
+            let [row, col] = [positionArray[0], positionArray[1]];
+            this.field[row][col] = 0;
+        });
     }
 
     // hold piece for later use 
     hold() {
         if (!this.canHold) return;
 
-        this.currentPiece.clearFromBoard(this.field); 
+        this.currentPiece.clearSelfFromBoard(this.field); 
 
         this.render();
 
@@ -93,25 +173,18 @@ export default class Game {
         switch(pieceName) {
             case "TPiece":
                 return new TPiece;
-                break;
             case "OPiece":
                 return new OPiece;
-                break;
             case "IPiece":
                 return new IPiece;
-                break;
             case "LPiece":
                 return new LPiece;
-                break;
             case "JPiece":
                 return new JPiece;
-                break;
             case "SPiece":
                 return new SPiece;
-                break;
             case "ZPiece":
                 return new ZPiece;
-                break;
         }
     }
 
@@ -170,15 +243,7 @@ export default class Game {
     }
     // implementation of shuffle found on https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array#2450976
 
-    _setField() {
-        let field = new Field();
-        return field._generateField();
-    }
-
     _gameOver() {
-        // for (let i = 0; i < this.field[0].length; i++) {
-        //     if (this.field[0][i]) return true;
-        // }
         return false;
     }
 
@@ -188,11 +253,14 @@ export default class Game {
         this.field.forEach((row, rowIdx) => {
             row.forEach((col, colIdx) => {
                 let squareValue = this.field[rowIdx][colIdx];
-                if (squareValue) {
+                if (squareValue === 'x') {
+                    fieldColumns[colIdx].children[rowIdx].classList.add(`x-${this.colors[this.currentPiece.colorCode]}`);
+                } else if (squareValue) {
                     fieldColumns[colIdx].children[rowIdx].classList.add(this.colors[squareValue]);
                 } else {
                     Object.values(this.colors).forEach(color => {
                         fieldColumns[colIdx].children[rowIdx].classList.remove(color);
+                        fieldColumns[colIdx].children[rowIdx].classList.remove(`x-${color}`);
                     })
                 }
             });
@@ -203,41 +271,57 @@ export default class Game {
         document.body.addEventListener("keydown", event => {
             console.log(event);
             this.currentPiece.setLeftMostAndRightMost();
+            this.clearGhostPosition();
             switch(event.which) {
                 // up key
                 case 38:
-                    this.currentPiece.move("up");
+                    // pass field so piece can check field wall before turning
+                    this.currentPiece.move("up", this.field);
+                    this.populateField(this.currentPiece);
+                    this.setGhostPosition();
                     break;
                 // right key
                 case 39:
-                    if (this.currentPiece.rightSideNextToBlock(this.field)) break;
+                    if (this.currentPiece.rightSideBlocked(this.field)) break;
                     this.currentPiece.move("right");
+                    this.populateField(this.currentPiece);
+                    this.setGhostPosition();
                     break;
                 // down key
                 case 40:
                     if (!this.currentPiece.isFalling(this.field)) break;
                     this.currentPiece.move("down");
+                    this.populateField(this.currentPiece);
+                    this.setGhostPosition();
                     break;
                 // left key
                 case 37:
-                    if (this.currentPiece.leftSideNextToBlock(this.field)) break;
+                    if (this.currentPiece.leftSideBlocked(this.field)) break;
                     this.currentPiece.move("left");
+                    this.populateField(this.currentPiece);
+                    this.setGhostPosition();
                     break;
                 // shift key
                 case 16: 
-                    console.log(this);
                     this.hold();
+                    this.populateField(this.currentPiece);
+                    this.setGhostPosition();
                     break;
                 // space bar
                 case 32:
+                    // this.render();
                     this.currentPiece.hardDrop(this.field);
-                    this.currentPiece._populateField(this.field);
+                    this.render();
+                    this.populateField(this.currentPiece);
                     this.handlePieceStop(this.clearHandle);
                     break;
+                default:
+                    this.setGhostPosition();
             }
             console.log(this.currentPiece);
             this.currentPiece.setLeftMostAndRightMost();
-            this.currentPiece._populateField(this.field);
+            // messes up with piece color
+            // this.populateField(this.currentPiece);
             this.render();
         });
     }
@@ -247,12 +331,11 @@ export default class Game {
         if (lowest < highest) return;
         // recursive case: 
         // if lowest row does not contain a 0, bring all above rows down one level
-        debugger
         if (!this.field[lowest].includes(0)) {
             this._bringDownField(lowest);
             // call recursiveClear(lowest, highest + 1);
             this.clearLines(lowest, highest + 1)
-        // if row contains a 0 
+        // if rw contains a 0 
         // call ClearLines(lowest - 1, highest)
         } else if (this.field[lowest].includes(0)) {
             this.clearLines(lowest - 1, highest);
@@ -260,42 +343,43 @@ export default class Game {
     }
 
     _bringDownField(startingRow) {
-        debugger
         for (let i = startingRow; i > 0; i--) {
             this.field[i] = this.field[i - 1];
         }
         this.field[0] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        debugger
     }
 
-    handlePieceStop(clear) {
+    handlePieceStop(clear) {     
         // allow player to hold piece again
         this.canHold = true;
         let lowest = this.currentPiece.position.bottom[0][0];
         // in case of line piece, which may not have this.position.top
         let highest = !this.currentPiece.position.top.length ? lowest : this.currentPiece.position.top[0][0];
-        debugger
         this.clearLines(lowest, highest);
+        this.clearGhostClass();
         clearInterval(clear);
         this.play();
     }
     
     play() {
         this._setCurrentPiece();
+        this.populateField(this.currentPiece);
         this._addToCurrentBag();
         this._showCurrentBag();
         if (!this.nextBag.length) this._refillNextBag();
+        this.setGhostPosition();
         
         let clear = setInterval(() => {
-            console.log(this.currentPiece.position);
             this.clearHandle = clear;
-            this.currentPiece._populateField(this.field);
+            this.populateField(this.currentPiece);
             this.render();
-            if (!this.currentPiece.isFalling(this.field)) this.handlePieceStop(clear);
+            if (!this.currentPiece.isFalling(this.field)) {
+                this.handlePieceStop(clear);
+            }   
             this.currentPiece.drop();
-            this.currentPiece._populateField(this.field); // keep only one populate field?
+            this.populateField(this.currentPiece); // keep only one populate field?
             this.render();
-        }, 200);
+        }, 1000);
     }
 
 }

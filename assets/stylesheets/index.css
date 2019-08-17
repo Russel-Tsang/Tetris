@@ -22,8 +22,8 @@ body {
 list-style: none;
     border: 1px #666666 solid;
     /* background-color: #1a1a1a; */
-    height: 30px;
-    width: 30px;
+    height: 32px;
+    width: 32px;
     box-sizing: border-box;
 }
 
@@ -36,7 +36,7 @@ list-style: none;
 .hold-box {
     display: flex;
     border: 2px red solid;
-    height: 80px;
+    height: 100px;
     margin-top: 30px;
 }
 
@@ -84,4 +84,40 @@ list-style: none;
 
 .orange {
     background: #f0a000;
+}
+
+/* ghost-square colors */
+li.x-yellow {
+    background: none;
+    border: 3px #f0f000 solid;
+}
+
+li.x-blue {
+    background: none;
+    border: 3px #00f0f0 solid;
+}
+
+li.x-dark-blue {
+    background: none;
+    border: 3px #022ff0 solid;
+}
+
+li.x-purple {
+    background: none;
+    border: 3px #9f35f0 solid;
+}
+
+li.x-green {
+    background: none;
+    border: 3px #00f000 solid;
+}
+
+li.x-red {
+    background: none;
+    border: 3px #f02300 solid;
+}
+
+li.x-orange {
+    background: none;
+    border: 3px #f0a000 solid;
 }

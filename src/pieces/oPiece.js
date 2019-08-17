@@ -15,4 +15,9 @@ export default class OPiece extends Piece {
 
         this.removeSquares = [];
     }
+
+    // OPiece does not turn
+    turnRight() {
+        return;
+    }
 } 
