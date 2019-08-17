@@ -42,6 +42,12 @@ export default class Game {
 
         this.isPaused = false;
 
+        // for key-holding
+        this.keyHeld = {
+            'downKey': false,
+            'leftKey': false,
+            'rightKey': false
+        }
     }
 
     _generateBag() {
@@ -304,11 +310,14 @@ export default class Game {
                     if (this.currentPiece.rightSideBlocked(this.field)){
                         this.setGhostPosition();
                         break;
-                    } 
-                    this.currentPiece.move("right");
-                    this.populateField(this.currentPiece);
-                    this.setGhostPosition();
-                    break;
+                    }
+                    // this.keyHeld.rightKey = true; 
+                    // while (this.keyHeld.rightKey) {
+                        this.currentPiece.move("right");
+                        this.populateField(this.currentPiece);
+                        this.setGhostPosition();
+                    //     break;
+                    // }
                 // down key
                 case 40:
                     if (!this.currentPiece.isFalling(this.field)) break;
@@ -350,11 +359,19 @@ export default class Game {
                 default:
                     this.setGhostPosition();
             }
-            console.log(this.currentPiece);
             this.currentPiece.setLeftMostAndRightMost();
             // messes up with piece color
             // this.populateField(this.currentPiece);
             this.render();
+        });
+
+        document.body.addEventListener("keyup", event => {
+            switch (event.which) {
+                case 39: 
+                    console.log("here!")
+                    this.keyHeld.rightKey = false;
+                    break;
+            }
         });
     }
 
