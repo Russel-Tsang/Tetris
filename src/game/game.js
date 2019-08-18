@@ -191,22 +191,6 @@ export default class Game {
         this.render();
     }
 
-    // populates this.field with the appropriate current piece colorCode, while setting previous piece positions to 0
-    populateField(piece) {
-        let coordinateArrays = Object.values(piece.position);
-        coordinateArrays.forEach(array => {
-            array.forEach(coordinate => {
-                let [row, col] = [coordinate[0], coordinate[1]];
-                this.field[row][col] = piece.colorCode;
-            })
-        });
-
-        piece.removeSquares.forEach(positionArray => {
-            let [row, col] = [positionArray[0], positionArray[1]];
-            this.field[row][col] = 0;
-        });
-    }
-
     // hold piece for later use 
     hold() {
         if (!this.canHold) return;
@@ -334,6 +318,7 @@ export default class Game {
                 if (squareValue === 'x') {
                     fieldColumns[colIdx].children[rowIdx].classList.add(`x-${this.colors[this.currentPiece.colorCode]}`);
                 } else if (squareValue) {
+                    debugger
                     fieldColumns[colIdx].children[rowIdx].classList.add(this.colors[squareValue]);
                 } else {
                     Object.values(this.colors).forEach(color => {
@@ -354,16 +339,16 @@ export default class Game {
                 case this.controls.turnRight:
                     // pass field so piece can check field wall before turning
                     this.clearGhostPosition();
-                    this.currentPiece.move("up", this.field);
-                    this.populateField(this.currentPiece);
+                    this.currentPiece.move("turnRight", this.field);
+                    this.currentPiece.populateField(this.field);
                     this.setGhostPosition();
                     break;
                 // C key
                 case this.controls.turnLeft:
                     // pass field so piece can check field wall before turning
                     this.clearGhostPosition();
-                    this.currentPiece.move("C", this.field);
-                    this.populateField(this.currentPiece);
+                    this.currentPiece.move("turnLeft", this.field);
+                    this.currentPiece.populateField(this.field);
                     this.setGhostPosition();
                     break;
                 // left key
@@ -396,7 +381,7 @@ export default class Game {
                 case this.controls.hold: 
                     this.clearGhostPosition();
                     this.hold();
-                    this.populateField(this.currentPiece);
+                    this.currentPiece.populateField(this.field);
                     this.setGhostPosition();
                     break;
                 // space bar
@@ -405,7 +390,7 @@ export default class Game {
                     this.clearGhostPosition();
                     this.currentPiece.hardDrop(this.field);
                     this.render();
-                    this.populateField(this.currentPiece);
+                    this.currentPiece.populateField(this.field);
                     this.handlePieceStop(this.handleClear.drop);
                     break;
                 // P key
@@ -422,7 +407,7 @@ export default class Game {
             }
             this.currentPiece.setLeftMostAndRightMost();
             // messes up with piece color
-            // this.populateField(this.currentPiece);
+            // this.currentPiece.populateField(this.field);
             this.render();
         });
 
@@ -523,13 +508,13 @@ export default class Game {
         if (elapsed > this.animate.drop.fpsInterval) {
             // Get ready for next frame by setting then=now, adjusting for specified fpsInterval not being a multiple of RAF's interval (16.7ms)
             this.animate.drop.then = this.animate.drop.now - (elapsed % this.animate.drop.fpsInterval);
-            this.populateField(this.currentPiece);
+            this.currentPiece.populateField(this.field);
             this.render();
             if (!this.currentPiece.isFalling(this.field)) {
                 this.handlePieceStop(this.handleClear.drop);
             }
             this.currentPiece.drop();
-            this.populateField(this.currentPiece); // keep only one populate field?
+            this.currentPiece.populateField(this.field); // keep only one populate field?
             this.render();
         }
     }
@@ -568,7 +553,7 @@ export default class Game {
                 return; 
             }
             this.currentPiece.move(direction);
-            this.populateField(this.currentPiece);
+            this.currentPiece.populateField(this.field);
             this.clearGhostPosition();
             this.setGhostPosition();
             this.render();
@@ -578,13 +563,13 @@ export default class Game {
     
     play() {
         this.setCurrentPiece();
-        this.populateField(this.currentPiece);
+        this.currentPiece.populateField(this.field);
         this._addToCurrentBag();
         this._showCurrentBag();
         if (!this.nextBag.length) this._refillNextBag();
         this.setGhostPosition();
         // drop piece at given fps
-        this.dropPiece(1);
+        // this.dropPiece(1);
     }
 
 

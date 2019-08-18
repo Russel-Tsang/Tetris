@@ -18,22 +18,22 @@ export default class Piece {
         this.rightMost = rightMost;
     }
 
-    _populateField(field) {
-        
+    populateField(field) {
+
         let coordinateArrays = Object.values(this.position);
 
         coordinateArrays.forEach(array => {
             array.forEach(coordinate => {
                 let [row, col] = [coordinate[0], coordinate[1]];
-                field[row][col] = this.colorCode;
+                if ((col >= 0 && col <= 19) && (row >= 0 && row <= 19)) field[row][col] = this.colorCode;
             })
         });
 
         this.removeSquares.forEach(positionArray => {
             let [row, col] = [positionArray[0], positionArray[1]];
-            field[row][col] = 0;
+            if ((col >= 0 && col <= 19) && (row >= 0 && row <= 19)) field[row][col] = 0;
         });
-        
+
     }
 
     // compares two arrays of coordinates and check if they have the same content in the same order
@@ -48,7 +48,7 @@ export default class Piece {
         let result = false;
         coordinateArrays.forEach(array => {
             if (this._squaresAreEqual(square, array)) {
-                result = true; 
+                result = true;
             }
         });
         return result;
@@ -73,12 +73,12 @@ export default class Piece {
     hardDrop(field) {
         this.clearSelfFromBoard(field);
         let stopped = false;
-        while(!stopped) {
+        while (!stopped) {
             let hangingSquares = this.hangingSquares(this.position);
             hangingSquares.forEach(coordinate => {
                 let [row, col] = [coordinate[0], coordinate[1]];
                 if ((row + 1 === 20 || field[row + 1][col])) stopped = true;
-            }); 
+            });
             if (stopped) break;
             this.position.top = this.position.top.map(array => [array[0] + 1, array[1]]);
             this.position.middle = this.position.middle.map(array => [array[0] + 1, array[1]]);
@@ -100,16 +100,16 @@ export default class Piece {
             middle: this.position.middle.map(array => array.slice()),
             bottom: this.position.bottom.map(array => array.slice()),
         }
-        switch(direction) {
-            case "left":  
+        switch (direction) {
+            case "left":
                 this.position.top = this.position.top.map(array => [array[0], array[1] - 1]);
                 this.position.middle = this.position.middle.map(array => [array[0], array[1] - 1]);
                 this.position.bottom = this.position.bottom.map(array => [array[0], array[1] - 1]);
                 this.turningPoint = [this.turningPoint[0], this.turningPoint[1] - 1];
                 break;
-            case "up":
+            case "turnRight":
                 // defer to subclass "turn" method
-                this.turnRight(field);
+                this.turnRight(field, oldPosition);
                 break;
             case "right":
                 this.position.top = this.position.top.map(array => [array[0], array[1] + 1]);
@@ -123,14 +123,20 @@ export default class Piece {
                 this.position.bottom = this.position.bottom.map(array => [array[0] + 1, array[1]]);
                 this.turningPoint = [this.turningPoint[0] + 1, this.turningPoint[1]];
                 break;
-            case "C":
+            case "up":
+                this.position.top = this.position.top.map(array => [array[0] - 1, array[1]]);
+                this.position.middle = this.position.middle.map(array => [array[0] - 1, array[1]]);
+                this.position.bottom = this.position.bottom.map(array => [array[0] - 1, array[1]]);
+                this.turningPoint = [this.turningPoint[0] - 1, this.turningPoint[1]];
+                break;
+            case "turnLeft":
                 this.turnLeft(field);
                 break;
         }
         this.setRemoveSquares(oldPosition);
     }
 
-    turnRight(field) {
+    turnRight(field, oldPosition) {
         let squares = [];
         Object.values(this.position).forEach(coordinatesArray => squares.push(...coordinatesArray));
         this.position.top = [];
@@ -153,11 +159,16 @@ export default class Piece {
                     this.position.middle.push([newRow, newCol]);
                     break;
             }
-        })
+        });
+        this.setRemoveSquares(oldPosition);
+        // causing issues with turning into the field???:
+        // this.populateField(field);
+
         // find left and right most squares to see if piece through wall
         // if through wall, push piece back into field
         this.setLeftMostAndRightMost();
-        
+
+        debugger
         while (this.rightMost > 9 || this.leftMost < 0) {
             this.rightMost > 9 ? this.move('left') : this.move('right');
             this.setLeftMostAndRightMost();
@@ -167,6 +178,14 @@ export default class Piece {
         if (this.position.top.length) {
             while (this.position.top[0][0] < 0) this.move('down');
         }
+
+        // in the case that piece is turned through floor
+        debugger
+        while (this.position.bottom[0][0] > 19) {
+            debugger
+            this.move('up');
+        }
+
     }
 
     turnLeft(field) {
@@ -196,7 +215,8 @@ export default class Piece {
         // find left and right most squares to see if piece through wall
         // if through wall, push piece back into field
         this.setLeftMostAndRightMost();
-        
+
+        debugger
         while (this.rightMost > 9 || this.leftMost < 0) {
             this.rightMost > 9 ? this.move('left') : this.move('right');
             this.setLeftMostAndRightMost();
@@ -229,7 +249,7 @@ export default class Piece {
             if (!this._includes(belowSquare, squares)) hangingSquares.push(square);
         })
         return hangingSquares;
-    } 
+    }
 
     sideSquares() {
         let squares = [];
