@@ -9,6 +9,5 @@ h1, h2, p, strong, em, a {
   text-decoration: inherit;
   text-align: inherit;
   color: inherit;
-  background: transparent;
   font-family: Helvetica, Arial, sans-serif
 }

@@ -8,7 +8,7 @@ import LPiece from '../pieces/lPiece';
 import JPiece from '../pieces/jPiece';
 
 export default class Game {
-    constructor() {
+    constructor(options) {
         this.field = this.setField()
 
         this.colors = {
@@ -18,8 +18,11 @@ export default class Game {
             4: "green",
             5: "red",
             6: "orange",
-            7: "dark-blue"
+            7: "dark-blue",
+            8: "grey"
         }
+
+        this.gameNum = options.gameNum;
 
         this.currentBag = this._shuffleBag(this.generateBag());
         this.currentPiece = '';
@@ -39,7 +42,7 @@ export default class Game {
 
         // for animations
         this.dropSpeed = 1.5;
-        this.moveSpeed = 20;
+        this.moveSpeed = options.moveSpeed;
         this.dropPiece = this.dropPiece.bind(this);
         this.drop = this.drop.bind(this);
         this.move = this.move.bind(this);
@@ -81,6 +84,10 @@ export default class Game {
             right: false,
             left: false
         }
+
+        this.opponent = "";
+        this.controls = options.controls;
+        this.upcomingLines = 0;
     }
 
     generateBag() {
@@ -119,7 +126,7 @@ export default class Game {
 
     // clears the color classes from the browser field
     clearGhostClass() {
-        let fieldColumns = document.querySelectorAll(".field-column");
+        let fieldColumns = document.querySelectorAll(`.field-column.field-${this.gameNum}`);
         let coordinateArrays = Object.values(this.ghostPosition);
 
         coordinateArrays.forEach(array => {
@@ -205,7 +212,7 @@ export default class Game {
     }
 
     _populateHoldBox() {
-        let columns = document.querySelector(".hold-box").children;
+        let columns = document.querySelector(`.hold-box.field-${this.gameNum}`).children;
 
         // remove colors from previous pieces
         for (let i = 0; i < 5; i++) {
@@ -248,7 +255,7 @@ export default class Game {
     }
 
     _showCurrentBag() {
-        let boxes = document.getElementsByClassName("next-box");
+        let boxes = document.getElementsByClassName(`next-box field-${this.gameNum}`);
         for (let i = 0; i < 5; i++) {
             this._populateNextBox(boxes[i], this.currentBag[i]);
         }
@@ -303,7 +310,7 @@ export default class Game {
 
     // look through field, if field[row][col] contains a number > 0, fill that spot with the respective color. Else, remove color
     render() {
-        let fieldColumns = document.querySelectorAll(".field-column");
+        let fieldColumns = document.querySelectorAll(`.field-column.field-${this.gameNum}`);
         this.field.forEach((row, rowIdx) => {
             row.forEach((col, colIdx) => {
                 let squareValue = this.field[rowIdx][colIdx];
@@ -327,7 +334,7 @@ export default class Game {
             // this.clearGhostPosition();
             switch(event.which) {
                 // up key
-                case 38:
+                case this.controls.turnRight:
                     // pass field so piece can check field wall before turning
                     this.clearGhostPosition();
                     this.currentPiece.move("up", this.field);
@@ -335,7 +342,7 @@ export default class Game {
                     this.setGhostPosition();
                     break;
                 // C key
-                case 67:
+                case this.controls.turnLeft:
                     // pass field so piece can check field wall before turning
                     this.clearGhostPosition();
                     this.currentPiece.move("C", this.field);
@@ -343,7 +350,7 @@ export default class Game {
                     this.setGhostPosition();
                     break;
                 // left key
-                case 37:
+                case this.controls.left:
                     this.keyHeld.left = true;
                     if (this.currentPiece.leftSideBlocked(this.field)){
                         this.clearGhostPosition();
@@ -353,7 +360,7 @@ export default class Game {
                     this.movePiece(this.moveSpeed, "left");
                     break;
                 // right key
-                case 39:
+                case this.controls.right:
                     this.keyHeld.right = true;
                     if (this.currentPiece.rightSideBlocked(this.field)){
                         this.clearGhostPosition();
@@ -363,20 +370,20 @@ export default class Game {
                     this.movePiece(this.moveSpeed, "right");
                     break;
                 // down key
-                case 40:
+                case this.controls.softDrop:
                     // if (!this.currentPiece.isFalling(this.field)) break;
                     this.keyHeld.down = true;
                     this.movePiece(this.moveSpeed, "down");
                     break;
                 // shift key
-                case 16: 
+                case this.controls.hold: 
                     this.clearGhostPosition();
                     this.hold();
                     this.populateField(this.currentPiece);
                     this.setGhostPosition();
                     break;
                 // space bar
-                case 32:
+                case this.controls.hardDrop:
                     // this.render();
                     this.clearGhostPosition();
                     this.currentPiece.hardDrop(this.field);
@@ -389,6 +396,7 @@ export default class Game {
                     // this.render();
                     this.isPaused ? this.dropPiece(this.dropSpeed) : cancelAnimationFrame(this.handleClear.drop);
                     this.isPaused = !this.isPaused;
+                    this.clearGhostPosition();
                     this.setGhostPosition();
                     break;
                 default:
@@ -403,32 +411,35 @@ export default class Game {
 
         document.body.addEventListener("keyup", event => {
             switch (event.which) {
-                case 39: 
+                case this.controls.right: 
                     this.keyHeld.right = false;
                     break;
-                case 37: 
+                case this.controls.left: 
                     this.keyHeld.left = false;
                     break;
-                case 40: 
+                case this.controls.softDrop: 
                     this.keyHeld.down = false;
                     break;  
             }
         });
     }
 
-    clearLines(lowest, highest) {
-        // base case: if we reach a row that is higher than the highest, then exit
-        if (lowest < highest) return;
+    clearLines(lowest, highest, numLinesCleared) {
+        // base case: if we reach a row that is higher than the highest, then return number of lines that were cleared
+        if (lowest < highest) {
+            console.log(numLinesCleared);
+            return numLinesCleared;
+        };
         // recursive case: 
         // if lowest row does not contain a 0, bring all above rows down one level
         if (!this.field[lowest].includes(0)) {
             this._bringDownField(lowest);
             // call recursiveClear(lowest, highest + 1);
-            this.clearLines(lowest, highest + 1)
-        // if rw contains a 0 
+            return this.clearLines(lowest, highest + 1, numLinesCleared + 1)
+        // if row contains a 0 
         // call ClearLines(lowest - 1, highest)
         } else if (this.field[lowest].includes(0)) {
-            this.clearLines(lowest - 1, highest);
+            return this.clearLines(lowest - 1, highest, numLinesCleared);
         }
     }
 
@@ -439,13 +450,25 @@ export default class Game {
         this.field[0] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     }
 
-    handlePieceStop(clear) {     
+    handlePieceStop() {     
         // allow player to hold piece again
         this.canHold = true;
         let lowest = this.currentPiece.position.bottom[0][0];
         // in case of line piece, which may not have this.position.top
         let highest = !this.currentPiece.position.top.length ? lowest : this.currentPiece.position.top[0][0];
-        this.clearLines(lowest, highest);
+        let numLinesCleared = this.clearLines(lowest, highest, 0);
+
+        // in the case of multiplayer, send cleared lines to opponent and receive potential lines
+        if (this.opponent) {
+            if (numLinesCleared === 4) {
+                this.opponent.addLinesToQueue(4);
+            }
+            else if (numLinesCleared > 1) {
+                this.opponent.addLinesToQueue(numLinesCleared - 1);
+            }
+            if (this.upcomingLines > 0) this.receiveUpcomingLines(this.upcomingLines);
+        }
+
         this.clearGhostClass();
         cancelAnimationFrame(this.handleClear.drop);
         this.play();
@@ -496,7 +519,7 @@ export default class Game {
             // Get ready for next frame by setting then=now, adjusting for specified fpsInterval not being a multiple of RAF's interval (16.7ms)
             this.animate[direction].then = this.animate[direction].now - (elapsed % this.animate[direction].fpsInterval);
 
-            this.clearGhostPosition();
+            
             // prevent piece from moving if it is blocked or if both left and right arrow keys are held down
             if (
                 direction === "right" && this.currentPiece.rightSideBlocked(this.field) 
@@ -511,9 +534,10 @@ export default class Game {
                 this.setGhostPosition();
                 return; 
             }
-
+            console.log('here');
             this.currentPiece.move(direction);
             this.populateField(this.currentPiece);
+            this.clearGhostPosition();
             this.setGhostPosition();
             this.render();
             // break;
@@ -529,6 +553,34 @@ export default class Game {
         this.setGhostPosition();
         // drop piece at 4 fps
         this.dropPiece(1.5);
+    }
+
+
+
+    // multiplayer 
+    setOpponent(player) {
+        this.opponent = player;
+    }
+
+    addLinesToQueue(numLines) {
+        this.upcomingLines += numLines;
+    }
+
+    receiveUpcomingLines() {
+        let garbageLines = [];
+        let numLines = this.upcomingLines;
+        for (let i = 0; i < numLines; i++) {
+            garbageLines.push([8,8,8,8,8,0,8,8,8,8])
+        }
+        // if player reaches the top, player loses
+        // slice allows player to continue playing if top middle is clear
+        if (!this.field[numLines - 1].slice(2,7).includes(0)) {
+            console.log("lost");
+            return;
+        }
+        this.field = this.field.slice(numLines, 20).concat(garbageLines);
+        this.upcomingLines = 0;
+        this.render();
     }
 
 }

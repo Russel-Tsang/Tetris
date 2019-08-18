@@ -1,11 +1,17 @@
 /* display field in center of the screen */
 body {
     display: flex;
-    justify-content: center;
+    justify-content: space-around;
+    background: #00f000;
+    padding-top: 5%;
 }
 
 /* line up columns next to each other */
 #field-container {
+    display: flex;
+}
+
+#field-container-2 {
     display: flex;
 }
 
@@ -84,6 +90,10 @@ list-style: none;
 
 .orange {
     background: #f0a000;
+}
+
+.grey {
+    background: #8d8d8f;
 }
 
 /* ghost-square colors */
