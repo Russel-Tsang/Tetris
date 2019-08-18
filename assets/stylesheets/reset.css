@@ -5,9 +5,6 @@ h1, h2, p, strong, em, a {
   /* padding: 0 !important; */
   outline: 0;
   box-sizing: inherit;
-  font: inherit;
   text-decoration: inherit;
-  text-align: inherit;
   color: inherit;
-  font-family: Helvetica, Arial, sans-serif
 }
