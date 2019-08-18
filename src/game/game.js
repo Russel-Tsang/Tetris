@@ -6,6 +6,7 @@ import SPiece from '../pieces/sPiece';
 import ZPiece from '../pieces/zPiece';
 import LPiece from '../pieces/lPiece';
 import JPiece from '../pieces/jPiece';
+import { adjustQueueHeight } from '../field/queue';
 
 export default class Game {
     constructor(options) {
@@ -88,6 +89,22 @@ export default class Game {
         this.opponent = "";
         this.controls = options.controls;
         this.upcomingLines = 0;
+        this.combo = -1;
+        this.comboGuide = {
+            0: 0,
+            1: 0, 
+            2: 1,
+            3: 1,
+            4: 1,
+            5: 2,
+            6: 2,
+            7: 3,
+            8: 3,
+            9: 4,
+            10: 4,
+            11: 4,
+            12: 5
+        };
     }
 
     generateBag() {
@@ -427,7 +444,6 @@ export default class Game {
     clearLines(lowest, highest, numLinesCleared) {
         // base case: if we reach a row that is higher than the highest, then return number of lines that were cleared
         if (lowest < highest) {
-            console.log(numLinesCleared);
             return numLinesCleared;
         };
         // recursive case: 
@@ -450,7 +466,8 @@ export default class Game {
         this.field[0] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     }
 
-    handlePieceStop() {     
+    handlePieceStop() {  
+        debugger   
         // allow player to hold piece again
         this.canHold = true;
         let lowest = this.currentPiece.position.bottom[0][0];
@@ -460,13 +477,29 @@ export default class Game {
 
         // in the case of multiplayer, send cleared lines to opponent and receive potential lines
         if (this.opponent) {
-            if (numLinesCleared === 4) {
-                this.opponent.addLinesToQueue(4);
-            }
-            else if (numLinesCleared > 1) {
-                this.opponent.addLinesToQueue(numLinesCleared - 1);
-            }
-            if (this.upcomingLines > 0) this.receiveUpcomingLines(this.upcomingLines);
+            if (numLinesCleared > 0) {
+                this.combo += 1;
+                let numLines = numLinesCleared === 4 ? 4 : numLinesCleared - 1;
+                numLines += this.comboGuide[this.combo];
+                if (this.upcomingLines > 0) {
+                    this.upcomingLines -= numLines;
+                    if (this.upcomingLines < 0) {
+                        this.opponent.addLinesToQueue(Math.abs(this.upcomingLines));
+                        this.upcomingLines = 0;
+                        adjustQueueHeight(this.gameNum, 0);
+                    } else {
+                        adjustQueueHeight(this.gameNum, this.upcomingLines * 5);
+                    }
+                } else {
+                    this.opponent.addLinesToQueue(numLines);
+                }
+            } else {
+                this.combo = -1;
+                if (this.upcomingLines > 0) {
+                    this.receiveUpcomingLines(this.upcomingLines);
+                    adjustQueueHeight(this.gameNum, 0);
+                }
+            } 
         }
 
         this.clearGhostClass();
@@ -534,7 +567,6 @@ export default class Game {
                 this.setGhostPosition();
                 return; 
             }
-            console.log('here');
             this.currentPiece.move(direction);
             this.populateField(this.currentPiece);
             this.clearGhostPosition();
@@ -551,8 +583,8 @@ export default class Game {
         this._showCurrentBag();
         if (!this.nextBag.length) this._refillNextBag();
         this.setGhostPosition();
-        // drop piece at 4 fps
-        this.dropPiece(1.5);
+        // drop piece at given fps
+        this.dropPiece(1);
     }
 
 
@@ -563,14 +595,21 @@ export default class Game {
     }
 
     addLinesToQueue(numLines) {
+        debugger
         this.upcomingLines += numLines;
+        let percentage = this.upcomingLines * 5;
+        adjustQueueHeight(this.gameNum, percentage);
     }
 
     receiveUpcomingLines() {
         let garbageLines = [];
         let numLines = this.upcomingLines;
+        let randomHole;
         for (let i = 0; i < numLines; i++) {
-            garbageLines.push([8,8,8,8,8,0,8,8,8,8])
+            if (i % 2 === 0) randomHole = Math.floor(Math.random() * 9);
+            let garbageRow = [8, 8, 8, 8, 8, 8, 8, 8, 8, 8];
+            garbageRow[randomHole] = 0;
+            garbageLines.push(garbageRow);
         }
         // if player reaches the top, player loses
         // slice allows player to continue playing if top middle is clear

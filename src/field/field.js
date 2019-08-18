@@ -1,5 +1,6 @@
 import HoldBox from './holdbox';
 import NextBox from './nextBox';
+import Queue from './queue';
 
 export default class Field {  
     constructor(fieldNum) {
@@ -37,9 +38,11 @@ export default class Field {
     }
 
     createCompleteField (container) {
+        let queue = new Queue(this.fieldNum);
         let nextBox = new NextBox(this.fieldNum);
         let holdBox = new HoldBox(this.fieldNum);
         container.append(this._createField());
+        container.append(queue.createQueue());
         container.append(nextBox.createNextBoxes());
         container.prepend(holdBox.createBox());
         return container;

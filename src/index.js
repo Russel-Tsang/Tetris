@@ -11,8 +11,9 @@ document.addEventListener("DOMContentLoaded", () => {
     field.createCompleteField(fieldContainer);
     field2.createCompleteField(fieldContainer2);
 
-    let optionsPlayer1 = { gameNum: 1, moveSpeed: 20, controls: { left: 37, right: 39, turnRight: 38, softDrop: 40, hold: 191, turnLeft: 76, hardDrop: 18 } }
-    let optionsPlayer2 = { gameNum: 2, moveSpeed: 20, controls: { left: 65, right: 68, turnRight: 87, softDrop: 83, hold: 81, turnLeft: 192, hardDrop: 16 } }
+    // let optionsPlayer1 = { gameNum: 1, moveSpeed: 20, controls: { left: 37, right: 39, turnRight: 38, softDrop: 40, hold: 191, turnLeft: 76, hardDrop: 18 } }
+    let optionsPlayer1 = { gameNum: 1, moveSpeed: 20, controls: { left: 37, right: 39, turnRight: 38, softDrop: 40, hold: 16, turnLeft: 67, hardDrop: 32 } }
+    let optionsPlayer2 = { gameNum: 2, moveSpeed: 20, controls: { left: 188, right: 191, turnRight: 76, softDrop: 190, hold: 75, turnLeft: 87, hardDrop: 18 } }
 
     let game1 = new Game(optionsPlayer1);
     game1.keyListener();

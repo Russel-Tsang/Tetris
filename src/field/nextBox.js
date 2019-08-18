@@ -24,7 +24,10 @@ export default class NextBox {
 
     createNextBoxes() {
         let boxes = document.createElement("div");
+        let heading = document.createElement("h2");
+        heading.innerHTML = "NEXT";
         boxes.classList.add(`next-boxes`, `field-${this.fieldNum}`);
+        boxes.appendChild(heading);
         for (let i = 0; i < 5; i++) {
             boxes.appendChild(this._createNextBox());
         }
