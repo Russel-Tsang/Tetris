@@ -6,10 +6,11 @@ import SPiece from '../pieces/sPiece';
 import ZPiece from '../pieces/zPiece';
 import LPiece from '../pieces/lPiece';
 import JPiece from '../pieces/jPiece';
+import { adjustQueueHeight } from '../field/queue';
 
 export default class Game {
-    constructor() {
-        this.field = this._setField()
+    constructor(options) {
+        this.field = this.setField()
 
         this.colors = {
             1: "yellow",
@@ -18,33 +19,95 @@ export default class Game {
             4: "green",
             5: "red",
             6: "orange",
-            7: "dark-blue"
+            7: "dark-blue",
+            8: "grey"
         }
-        this.currentBag = this._shuffleBag(this._generateBag());
+
+        this.gameNum = options.gameNum;
+
+        this.currentBag = this._shuffleBag(this.generateBag());
         this.currentPiece = '';
         this.holdPiece = '';
         this.ghostPosition = '';
-        this.nextBag = this._shuffleBag(this._generateBag());
+        this.nextBag = this._shuffleBag(this.generateBag());
 
         // prevents player from holding piece multiple times
         this.canHold = true;
 
-        this.clearHandle;
+        this.handleClear = {
+            drop: '',
+            right: '',
+            left: '',
+            down: ''
+        };
 
         // for animations
+        this.dropSpeed = 1.5;
+        this.moveSpeed = options.moveSpeed;
         this.dropPiece = this.dropPiece.bind(this);
         this.drop = this.drop.bind(this);
-        this.fps = '';
-        this.fpsInterval = '';
-        this.startTime = '';
-        this.now = '';
-        this.then = '';
+        this.move = this.move.bind(this);
+        this.movePiece = this.movePiece.bind(this);
 
+        // keep track of the following variables for requestAnimationFrame throttling
+        this.animate = {
+            drop: {
+                fpsInterval: '',
+                startTime: '',
+                now: '',
+                then: ''
+            },
+            right: {
+                fpsInterval: '',
+                startTime: '',
+                now: '',
+                then: ''
+            },
+            left: {
+                fpsInterval: '',
+                startTime: '',
+                now: '',
+                then: ''
+            },
+            down: {
+                fpsInterval: '',
+                startTime: '',
+                now: '',
+                then: ''
+            }
+        }
+
+        // pausing the game
         this.isPaused = false;
 
+        this.keyHeld = {
+            down: false,
+            right: false,
+            left: false
+        }
+
+        this.opponent = "";
+        this.controls = options.controls;
+        this.upcomingLines = 0;
+        this.combo = -1;
+        this.comboGuide = {
+            0: 0,
+            1: 0, 
+            2: 1,
+            3: 1,
+            4: 1,
+            5: 2,
+            6: 2,
+            7: 3,
+            8: 3,
+            9: 4,
+            10: 4,
+            11: 4,
+            12: 5
+        };
     }
 
-    _generateBag() {
+    generateBag() {
         let oPiece = new OPiece();
         let iPiece = new IPiece();
         let tPiece = new TPiece();
@@ -56,30 +119,31 @@ export default class Game {
         return [oPiece, iPiece, tPiece, sPiece, zPiece, lPiece, jPiece];
     }
 
-    _setField() {
+    setField() {
         let field = new Field();
         return field._generateField();
     }
 
     // take piece from currentBag and set it as the current piece
-    _setCurrentPiece() {
+    setCurrentPiece() {
         this.currentPiece = this.currentBag.shift();
     }
 
-    // removes old ghost position before switching to a new one
+    // removes old ghost position from this.field before changing piece position
     clearGhostPosition() {
         let coordinateArrays = Object.values(this.ghostPosition);
-
         coordinateArrays.forEach(array => {
             array.forEach(coordinate => {
                 let [row, col] = [coordinate[0], coordinate[1]];
-                this.field[row][col] = 0;
+                // prevent method from clearing piece if it happens to be where the ghost position should be
+                if (this.field[row] && this.field[row][col] === "x" && row >= 0) this.field[row][col] = 0;
             })
         });
     }
 
+    // clears the color classes from the browser field
     clearGhostClass() {
-        let fieldColumns = document.querySelectorAll(".field-column");
+        let fieldColumns = document.querySelectorAll(`.field-column.field-${this.gameNum}`);
         let coordinateArrays = Object.values(this.ghostPosition);
 
         coordinateArrays.forEach(array => {
@@ -90,19 +154,19 @@ export default class Game {
         });
     }
 
+    // find appropriate ghost position as piece position changes
     setGhostPosition() {
         let ghostPosition = {
             top: this.currentPiece.position.top.map(coordinate => coordinate.slice()),
             middle: this.currentPiece.position.middle.map(coordinate => coordinate.slice()),
             bottom: this.currentPiece.position.bottom.map(coordinate => coordinate.slice())
         }
-
         let stopped = false;
         while (!stopped) {
             let hangingSquares = this.currentPiece.hangingSquares(ghostPosition);
             hangingSquares.forEach(coordinate => {
                 let [row, col] = [coordinate[0], coordinate[1]];
-                if (row + 1 === 20 || this.field[row + 1][col]) stopped = true;
+                if (row < 0 || row + 1 === 20 || this.field[row + 1][col]) stopped = true;
             });
             if (stopped) break;
             ghostPosition.top = ghostPosition.top.map(array => [array[0] + 1, array[1]]);
@@ -113,45 +177,29 @@ export default class Game {
         this._populateGhostPosition();
     }
 
+    // populate this.field with 'x' wherever the ghost position is calculated to be
     _populateGhostPosition() {
         let coordinateArrays = Object.values(this.ghostPosition);
-
         coordinateArrays.forEach(array => {
             array.forEach(coordinate => {
                 let [row, col] = [coordinate[0], coordinate[1]];
-                this.field[row][col] = "x";
+                if (this.currentPiece.bottomMost[0] >= 18) console.log(this.field);
+                if (this.field[row] && this.field[row][col] !== this.currentPiece.colorCode) this.field[row][col] = "x";
             })
         });
         this.render();
-    }
-
-    populateField(piece) {
-        let coordinateArrays = Object.values(piece.position);
-        coordinateArrays.forEach(array => {
-            array.forEach(coordinate => {
-                let [row, col] = [coordinate[0], coordinate[1]];
-                this.field[row][col] = piece.colorCode;
-            })
-        });
-
-        piece.removeSquares.forEach(positionArray => {
-            let [row, col] = [positionArray[0], positionArray[1]];
-            this.field[row][col] = 0;
-        });
     }
 
     // hold piece for later use 
     hold() {
         if (!this.canHold) return;
-
         this.currentPiece.clearSelfFromBoard(this.field); 
-
         this.render();
 
         if (this.holdPiece === '') {
             // pass current piece name into generate piece in order to generate a new piece instance
             this.holdPiece = this._generatePiece(this.currentPiece.name);
-            this._setCurrentPiece();
+            this.setCurrentPiece();
             // re-render next boxes to appropriately show current bag
             this._showCurrentBag();
         } else {
@@ -164,7 +212,7 @@ export default class Game {
     }
 
     _populateHoldBox() {
-        let columns = document.querySelector(".hold-box").children;
+        let columns = document.querySelector(`.hold-box.field-${this.gameNum}`).children;
 
         // remove colors from previous pieces
         for (let i = 0; i < 5; i++) {
@@ -207,7 +255,7 @@ export default class Game {
     }
 
     _showCurrentBag() {
-        let boxes = document.getElementsByClassName("next-box");
+        let boxes = document.getElementsByClassName(`next-box field-${this.gameNum}`);
         for (let i = 0; i < 5; i++) {
             this._populateNextBox(boxes[i], this.currentBag[i]);
         }
@@ -233,7 +281,7 @@ export default class Game {
 
     // refill next bag, will only be called once nextBag becomes empty
     _refillNextBag() {
-        this.nextBag = this._generateBag();
+        this.nextBag = this.generateBag();
     }
 
     // implementation of shuffle found on https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array#2450976
@@ -256,13 +304,10 @@ export default class Game {
     }
     // implementation of shuffle found on https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array#2450976
 
-    _gameOver() {
-        return false;
-    }
-
     // look through field, if field[row][col] contains a number > 0, fill that spot with the respective color. Else, remove color
     render() {
-        let fieldColumns = document.querySelectorAll(".field-column");
+        if (this.currentPiece.rightMost[1] > 9 || this.currentPiece.leftMost[1] < 0) return;
+        let fieldColumns = document.querySelectorAll(`.field-column.field-${this.gameNum}`);
         this.field.forEach((row, rowIdx) => {
             row.forEach((col, colIdx) => {
                 let squareValue = this.field[rowIdx][colIdx];
@@ -270,10 +315,13 @@ export default class Game {
                     fieldColumns[colIdx].children[rowIdx].classList.add(`x-${this.colors[this.currentPiece.colorCode]}`);
                 } else if (squareValue) {
                     fieldColumns[colIdx].children[rowIdx].classList.add(this.colors[squareValue]);
+                    fieldColumns[colIdx].children[rowIdx].classList.remove(`x-${this.colors[this.currentPiece.colorCode]}`);
                 } else {
                     Object.values(this.colors).forEach(color => {
-                        fieldColumns[colIdx].children[rowIdx].classList.remove(color);
-                        fieldColumns[colIdx].children[rowIdx].classList.remove(`x-${color}`);
+                        if (fieldColumns[colIdx]) {
+                            fieldColumns[colIdx].children[rowIdx].classList.remove(color);
+                            fieldColumns[colIdx].children[rowIdx].classList.remove(`x-${color}`);
+                        }
                     })
                 }
             });
@@ -282,95 +330,104 @@ export default class Game {
 
     keyListener() {
         document.body.addEventListener("keydown", event => {
-            this.currentPiece.setLeftMostAndRightMost();
-            this.clearGhostPosition();
+            this.currentPiece.setOuterSquares();
+            // this.clearGhostPosition();
             switch(event.which) {
                 // up key
-                case 38:
+                case this.controls.turnRight:
                     // pass field so piece can check field wall before turning
-                    this.currentPiece.move("up", this.field);
-                    this.populateField(this.currentPiece);
+                    this.clearGhostPosition();
+                    this.currentPiece.move("turnRight", this.field);
+                    if (this.currentPiece.rightMost[1] < 10) {
+                        this.currentPiece.populateField(this.field);
+                    }
                     this.setGhostPosition();
                     break;
                 // C key
-                case 67:
+                case this.controls.turnLeft:
                     // pass field so piece can check field wall before turning
-                    this.currentPiece.move("C", this.field);
-                    this.populateField(this.currentPiece);
-                    this.setGhostPosition();
-                    break;
-                // right key
-                case 39:
-                    if (this.currentPiece.rightSideBlocked(this.field)){
-                        this.setGhostPosition();
-                        break;
-                    } 
-                    this.currentPiece.move("right");
-                    this.populateField(this.currentPiece);
-                    this.setGhostPosition();
-                    break;
-                // down key
-                case 40:
-                    if (!this.currentPiece.isFalling(this.field)) break;
-                    this.currentPiece.move("down");
-                    this.populateField(this.currentPiece);
+                    this.clearGhostPosition();
+                    this.currentPiece.move("turnLeft", this.field);
+                    this.currentPiece.populateField(this.field);
                     this.setGhostPosition();
                     break;
                 // left key
-                case 37:
-                    if (this.currentPiece.leftSideBlocked(this.field)){
-                        this.setGhostPosition();
-                        break;
-                    } 
-                    this.currentPiece.move("left");
-                    this.populateField(this.currentPiece);
-                    this.setGhostPosition();
+                case this.controls.left:
+                    this.keyHeld.left = true;
+                    if (this.currentPiece.leftSideBlocked(this.field)) break;
+                    this.movePiece(this.moveSpeed, "left");
+                    break;
+                // right key
+                case this.controls.right:
+                    this.keyHeld.right = true;
+                    if (this.currentPiece.rightSideBlocked(this.field)) break;
+                    this.movePiece(this.moveSpeed, "right");
+                    break;
+                // down key
+                case this.controls.softDrop:
+                    this.keyHeld.down = true;
+                    this.movePiece(this.moveSpeed, "down");
                     break;
                 // shift key
-                case 16: 
+                case this.controls.hold: 
+                    this.clearGhostPosition();
                     this.hold();
-                    this.populateField(this.currentPiece);
+                    this.currentPiece.populateField(this.field);
                     this.setGhostPosition();
                     break;
                 // space bar
-                case 32:
+                case this.controls.hardDrop:
                     // this.render();
+                    this.clearGhostPosition();
                     this.currentPiece.hardDrop(this.field);
                     this.render();
-                    this.populateField(this.currentPiece);
-                    this.handlePieceStop(this.clearHandle);
+                    this.currentPiece.populateField(this.field);
+                    this.handlePieceStop(this.handleClear.drop);
                     break;
                 // P key
                 case 80:
-                    // this.render();
-                    this.isPaused ? this.dropPiece(1.5) : cancelAnimationFrame(this.clearHandle);
+                    this.isPaused ? this.dropPiece(this.dropSpeed) : cancelAnimationFrame(this.handleClear.drop);
                     this.isPaused = !this.isPaused;
-                    this.setGhostPosition();
                     break;
                 default:
-                    this.setGhostPosition();
+                    break;
             }
-            console.log(this.currentPiece);
-            this.currentPiece.setLeftMostAndRightMost();
+            this.currentPiece.setOuterSquares();
             // messes up with piece color
-            // this.populateField(this.currentPiece);
+            // this.currentPiece.populateField(this.field);
             this.render();
+        });
+
+        document.body.addEventListener("keyup", event => {
+            switch (event.which) {
+                case this.controls.right: 
+                    this.keyHeld.right = false;
+                    break;
+                case this.controls.left: 
+                    this.keyHeld.left = false;
+                    break;
+                case this.controls.softDrop: 
+                    this.keyHeld.down = false;
+                    break;  
+            }
         });
     }
 
-    clearLines(lowest, highest) {
-        // base case: if we reach a row that is higher than the highest, then exit
-        if (lowest < highest) return;
+    clearLines(lowest, highest, numLinesCleared) {
+        // base case: if we reach a row that is higher than the highest, then return number of lines that were cleared
+        if (lowest < highest) {
+            return numLinesCleared;
+        };
         // recursive case: 
         // if lowest row does not contain a 0, bring all above rows down one level
         if (!this.field[lowest].includes(0)) {
             this._bringDownField(lowest);
             // call recursiveClear(lowest, highest + 1);
-            this.clearLines(lowest, highest + 1)
-        // if rw contains a 0 
+            return this.clearLines(lowest, highest + 1, numLinesCleared + 1)
+        // if row contains a 0 
         // call ClearLines(lowest - 1, highest)
         } else if (this.field[lowest].includes(0)) {
-            this.clearLines(lowest - 1, highest);
+            return this.clearLines(lowest - 1, highest, numLinesCleared);
         }
     }
 
@@ -381,55 +438,197 @@ export default class Game {
         this.field[0] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     }
 
-    handlePieceStop(clear) {     
+    handlePieceStop() {  
         // allow player to hold piece again
         this.canHold = true;
         let lowest = this.currentPiece.position.bottom[0][0];
         // in case of line piece, which may not have this.position.top
         let highest = !this.currentPiece.position.top.length ? lowest : this.currentPiece.position.top[0][0];
-        this.clearLines(lowest, highest);
+        if (!this.field[lowest]) console.log("dasd");
+        let numLinesCleared = this.clearLines(lowest, highest, 0);
+
+        // in the case of multiplayer, send cleared lines to opponent and receive potential lines
+        if (this.opponent) {
+            if (numLinesCleared > 0) {
+                this.combo += 1;
+                let numLines = numLinesCleared === 4 ? 4 : numLinesCleared - 1;
+                numLines += this.comboGuide[this.combo];
+                if (this.upcomingLines > 0) {
+                    this.upcomingLines -= numLines;
+                    if (this.upcomingLines < 0) {
+                        this.opponent.addLinesToQueue(Math.abs(this.upcomingLines));
+                        this.upcomingLines = 0;
+                        adjustQueueHeight(this.gameNum, 0);
+                    } else {
+                        adjustQueueHeight(this.gameNum, this.upcomingLines * 5);
+                    }
+                } else {
+                    this.opponent.addLinesToQueue(numLines);
+                }
+            } else {
+                this.combo = -1;
+                if (this.upcomingLines > 0) {
+                    this.receiveUpcomingLines(this.upcomingLines);
+                    adjustQueueHeight(this.gameNum, 0);
+                }
+            } 
+        }
+
         this.clearGhostClass();
-        cancelAnimationFrame(this.clearHandle);
+        cancelAnimationFrame(this.handleClear.drop);
         this.play();
     }
 
     dropPiece(fps) {
         // Do whatever
-        this.fpsInterval = 1000 / fps;
-        this.then = Date.now();
-        this.startTime = this.then;
+        this.animate.drop.fpsInterval = 1000 / fps;
+        this.animate.drop.then = Date.now();
+        this.animate.drop.startTime = this.then;
         this.drop();
     }
 
     // inspiration for throttling requestAnimationFrame from https://stackoverflow.com/questions/19764018/controlling-fps-with-requestanimationframe
     drop() {
-        this.clearHandle = requestAnimationFrame(this.drop);
-        this.now = Date.now();
-        let elapsed = this.now - this.then;
-        if (elapsed > this.fpsInterval) {
+        this.handleClear.drop = requestAnimationFrame(this.drop);
+        this.animate.drop.now = Date.now();
+        let elapsed = this.animate.drop.now - this.animate.drop.then;
+        if (elapsed > this.animate.drop.fpsInterval) {
             // Get ready for next frame by setting then=now, adjusting for specified fpsInterval not being a multiple of RAF's interval (16.7ms)
-            this.then = this.now - (elapsed % this.fpsInterval);
-
-            this.populateField(this.currentPiece);
+            this.animate.drop.then = this.animate.drop.now - (elapsed % this.animate.drop.fpsInterval);
+            this.currentPiece.populateField(this.field);
             this.render();
             if (!this.currentPiece.isFalling(this.field)) {
-                this.handlePieceStop(this.clearHandle);
+                this.handlePieceStop(this.handleClear.drop);
             }
-            this.currentPiece.drop();
-            this.populateField(this.currentPiece); // keep only one populate field?
+            if (this.currentPiece.bottomMost[0] != 0) this.currentPiece.drop();
+            // this.setGhostPosition();
+            this.currentPiece.populateField(this.field); // keep only one populate field?
             this.render();
         }
     }
+
+    movePiece(fps, direction) {
+        // Do whatever
+        this.animate[direction].fpsInterval = 1000 / fps;
+        this.animate[direction].then = Date.now();
+        this.animate[direction].startTime = this.animate[direction].then;
+        this.move(direction);
+    }
+
+    // inspiration for throttling requestAnimationFrame from https://stackoverflow.com/questions/19764018/controlling-fps-with-requestanimationframe
+    move(direction) {
+        this.handleClear[direction] = requestAnimationFrame(() => this.move(direction));
+        if (!this.keyHeld[direction]) cancelAnimationFrame(this.handleClear[direction]);
+        this.animate[direction].now = Date.now();
+        let elapsed = this.animate[direction].now - this.animate[direction].then;
+        if (elapsed > this.animate[direction].fpsInterval) {
+            // Get ready for next frame by setting then=now, adjusting for specified fpsInterval not being a multiple of RAF's interval (16.7ms)
+            this.animate[direction].then = this.animate[direction].now - (elapsed % this.animate[direction].fpsInterval);
+
+            // prevent piece from moving if it is blocked or if both left and right arrow keys are held down
+            if (
+                direction === "right" && this.currentPiece.rightSideBlocked(this.field) 
+                || 
+                direction === "left" && this.currentPiece.leftSideBlocked(this.field) 
+                || 
+                direction === "down" && !this.currentPiece.isFalling(this.field)
+                || 
+                this.keyHeld.right && this.keyHeld.left
+            ) { 
+                // this.clearGhostPosition();
+                // this.setGhostPosition();
+                return; 
+            }
+            this.currentPiece.move(direction);
+            // this.clearGhostPosition();
+            this.currentPiece.populateField(this.field);
+            // causing ghost position lag
+            this.clearGhostPosition();
+            this.setGhostPosition();
+            this.render();
+            // break;
+        }
+    }
+
+    handleTopPiece() {
+        let atTop = false;
+        try {
+            while (this.field[this.currentPiece.position.bottom[0][0]][3] || this.field[this.currentPiece.position.bottom[0][0]][4] || this.field[this.currentPiece.position.bottom[0][0]][5] || this.field[this.currentPiece.position.bottom[0][0]][6]) {
+                this.currentPiece.move("up");
+                atTop = true;
+            }
+        } catch {
+            this.gameOver(this.opponent.gameNum);
+        }
+        return atTop;
+    }
     
     play() {
-        this._setCurrentPiece();
-        this.populateField(this.currentPiece);
+        this.setCurrentPiece();
+        debugger
+        if (this.handleTopPiece() === true) {
+            this.currentPiece.populateField(this.field, "atTop");
+        } else {
+            this.currentPiece.populateField(this.field);
+        }
         this._addToCurrentBag();
         this._showCurrentBag();
         if (!this.nextBag.length) this._refillNextBag();
         this.setGhostPosition();
-        // drop piece at 4 fps
-        this.dropPiece(1.5);
+        // drop piece at given fps
+        this.dropPiece(this.dropSpeed);
     }
 
+    gameOver(winner) {
+        this.dropSpeed = 0;
+        let gameOverScreen = document.createElement("div");
+        gameOverScreen.classList.add("game-over-div");
+        
+        let gameOverHeading = document.createElement("h2");
+        gameOverHeading.classList.add("game-over-heading");
+
+        gameOverHeading.innerHTML = "GAME OVER";
+        gameOverScreen.append(gameOverHeading);
+
+        let winnerHeading;
+        if (winner)  {
+            winnerHeading = document.createElement("h2");
+            winnerHeading.classList.add("game-over-heading");
+            winnerHeading.innerHTML = `PLAYER ${winner} WON`;
+            gameOverScreen.append(winnerHeading)
+        }   
+
+        document.body.appendChild(gameOverScreen);
+    }
+
+    // multiplayer 
+    setOpponent(player) {
+        this.opponent = player;
+    }
+
+    addLinesToQueue(numLines) {
+        this.upcomingLines += numLines;
+        let percentage = this.upcomingLines * 5;
+        adjustQueueHeight(this.gameNum, percentage);
+    }
+
+    receiveUpcomingLines() {
+        let garbageLines = [];
+        let numLines = this.upcomingLines;
+        let randomHole;
+        for (let i = 0; i < numLines; i++) {
+            if (i % 2 === 0) randomHole = Math.floor(Math.random() * 9);
+            let garbageRow = [8, 8, 8, 8, 8, 8, 8, 8, 8, 8];
+            garbageRow[randomHole] = 0;
+            garbageLines.push(garbageRow);
+        }
+        // if player reaches the top, player loses
+        // slice allows player to continue playing if top middle is clear
+        if (!this.field[numLines - 1].slice(2,7).includes(0)) {
+            return;
+        }
+        this.field = this.field.slice(numLines, 20).concat(garbageLines);
+        this.upcomingLines = 0;
+        this.render();
+    }
 }

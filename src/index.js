@@ -1,14 +1,6 @@
-import Game from './game/game';
-import Field from './field/field';
+import Menu from './menu/menu'
 
 document.addEventListener("DOMContentLoaded", () => {
-    const fieldContainer = document.getElementById("field-container");
-
-    let field = new Field();
-    field.createFieldWithHoldBoxAndNextBoxes(fieldContainer);
-
-    let game = new Game();
-    game.keyListener();
-    game.play(fieldContainer);
-
+    const menu = new Menu;
+    menu.renderMenu();
 });
