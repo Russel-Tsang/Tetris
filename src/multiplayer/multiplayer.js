@@ -13,21 +13,3 @@ export default class Multiplayer {
         this.player2.play();
     }
 }
-
-// multiplayer.js(game1, game2) {
-//     if game1.sentLines ?
-//         game2.addLines
-// 	if game2.sentLines ?
-//             game1.addLines
-
-// 	game1 {
-//         this.opponent = ‘’;
-//         this.multiplayer = “”;
-//     }
-
-//     game1 = newGame(params)
-//     game2 = newGame(params)
-
-//     game1.set(game2) {
-//         will set multiplayer to true and opponent to other game
-//     }

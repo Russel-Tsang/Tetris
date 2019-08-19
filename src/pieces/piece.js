@@ -2,24 +2,27 @@ export default class Piece {
     constructor() {
         this.leftMost = '';
         this.rightMost = '';
+        this.bottomMost = '';
+        this.topMost = '';
     }
 
-    setLeftMostAndRightMost() {
-        let leftMost;
-        let rightMost;
+    setOuterSquares() {
+        let leftMost, rightMost, topMost, bottomMost;
         Object.values(this.position).forEach(coordinatesArray => coordinatesArray.forEach(array => {
             let columnValue = array[1];
-            if (!leftMost) leftMost = columnValue;
-            if (!rightMost) rightMost = columnValue;
-            if (columnValue < leftMost) leftMost = columnValue;
-            if (columnValue > rightMost) rightMost = columnValue;
+            let rowValue = array[0];
+            if (!leftMost || columnValue < leftMost[1]) leftMost = [rowValue, columnValue];
+            if (!rightMost || columnValue > rightMost[1]) rightMost = [rowValue, columnValue];
+            if (!bottomMost || rowValue > bottomMost[0]) bottomMost = [rowValue, columnValue];
+            if (!topMost || rowValue < topMost[0]) topMost = [rowValue, columnValue];
         }));
         this.leftMost = leftMost;
         this.rightMost = rightMost;
+        this.topMost = topMost;
+        this.bottomMost = bottomMost;
     }
 
-    populateField(field) {
-
+    populateField(field, atTop) {
         let coordinateArrays = Object.values(this.position);
 
         coordinateArrays.forEach(array => {
@@ -87,11 +90,13 @@ export default class Piece {
     }
 
     clearSelfFromBoard(field) {
+        debugger
         Object.values(this.position).forEach(coordinateArrays => coordinateArrays.forEach(coordinate => {
             let row = coordinate[0];
             let col = coordinate[1];
-            field[row][col] = 0;
+            if (row < 20 && row >= 0 && col >= 0 && col < 10) field[row][col] = 0;
         }));
+        debugger
     }
 
     move(direction, field) {
@@ -130,13 +135,16 @@ export default class Piece {
                 this.turningPoint = [this.turningPoint[0] - 1, this.turningPoint[1]];
                 break;
             case "turnLeft":
-                this.turnLeft(field);
+                this.turnLeft(field, oldPosition);
                 break;
         }
+        this.setOuterSquares();
         this.setRemoveSquares(oldPosition);
     }
 
     turnRight(field, oldPosition) {
+        // clear from field first so that the piece doesn't see itself as a conflicting piece
+        this.clearSelfFromBoard(field);
         let squares = [];
         Object.values(this.position).forEach(coordinatesArray => squares.push(...coordinatesArray));
         this.position.top = [];
@@ -149,10 +157,10 @@ export default class Piece {
             let newCol = this.turningPoint[1] + heightDifference;
             let newRow = this.turningPoint[0] + (widthDifference * -1);
             switch (column) {
-                case column = this.rightMost:
+                case column = this.rightMost[1]:
                     this.position.bottom.push([newRow, newCol]);
                     break;
-                case column = this.leftMost:
+                case column = this.leftMost[1]:
                     this.position.top.push([newRow, newCol]);
                     break;
                 default:
@@ -164,31 +172,41 @@ export default class Piece {
         // causing issues with turning into the field???:
         // this.populateField(field);
 
-        // find left and right most squares to see if piece through wall
-        // if through wall, push piece back into field
-        this.setLeftMostAndRightMost();
+        // find outer-most squares to see if piece is obstructed
+        // if so, push piece back into field
+        this.setOuterSquares();
 
-        debugger
-        while (this.rightMost > 9 || this.leftMost < 0) {
-            this.rightMost > 9 ? this.move('left') : this.move('right');
-            this.setLeftMostAndRightMost();
+        // in the case that piece is turned through floor
+        while ((this.bottomMost[0] > 19 || field[this.bottomMost[0]][this.bottomMost[1]])) {
+            this.move('up');
+            this.setOuterSquares();
         }
 
         // in the case that the IPiece is turned through the field ceiling
-        if (this.position.top.length) {
-            while (this.position.top[0][0] < 0) this.move('down');
+        while (this.topMost[0] < 0 || field[this.topMost[0]][this.topMost[1]]) {
+            this.move('down');
+            this.setOuterSquares();
         }
 
-        // in the case that piece is turned through floor
-        debugger
-        while (this.position.bottom[0][0] > 19) {
-            debugger
-            this.move('up');
+        while (this.rightMost[1] > 9 || field[this.rightMost[0]][this.rightMost[1]]) {
+            // this.rightMost > 9 ? this.move('left') : this.move('right');
+            this.move('left');
+            this.setOuterSquares();
         }
 
+        while (this.leftMost[1] < 0 || field[this.leftMost[0]][this.leftMost[1]]) {
+            // this.rightMost > 9 ? this.move('left') : this.move('right');
+            if (field[this.rightMost[0]][this.rightMost[1] + 1]) {
+                this.move('up');
+            } else {
+                this.move('right');
+            }
+            this.setOuterSquares();
+        }
     }
 
-    turnLeft(field) {
+    turnLeft(field, oldPosition) {
+        this.clearSelfFromBoard(field);
         let squares = [];
         Object.values(this.position).forEach(coordinatesArray => squares.push(...coordinatesArray));
         this.position.top = [];
@@ -201,10 +219,10 @@ export default class Piece {
             let newCol = this.turningPoint[1] - heightDifference;
             let newRow = this.turningPoint[0] - (widthDifference * -1);
             switch (column) {
-                case column = this.rightMost:
+                case column = this.rightMost[1]:
                     this.position.top.push([newRow, newCol]);
                     break;
-                case column = this.leftMost:
+                case column = this.leftMost[1]:
                     this.position.bottom.push([newRow, newCol]);
                     break;
                 default:
@@ -212,19 +230,38 @@ export default class Piece {
                     break;
             }
         })
+        this.setRemoveSquares(oldPosition);
+
         // find left and right most squares to see if piece through wall
         // if through wall, push piece back into field
-        this.setLeftMostAndRightMost();
+        this.setOuterSquares();
 
-        debugger
-        while (this.rightMost > 9 || this.leftMost < 0) {
-            this.rightMost > 9 ? this.move('left') : this.move('right');
-            this.setLeftMostAndRightMost();
+        // in the case that piece is turned through floor
+        while ((this.bottomMost[0] > 19 || field[this.bottomMost[0]][this.bottomMost[1]])) {
+            this.move('up');
+            this.setOuterSquares();
         }
 
         // in the case that the IPiece is turned through the field ceiling
-        if (this.position.top.length) {
-            while (this.position.top[0][0] < 0) this.move('down');
+        while (this.topMost[0] < 0 || field[this.topMost[0]][this.topMost[1]]) {
+            this.move('down');
+            this.setOuterSquares();
+        }
+
+        while (this.rightMost[1] > 9 || field[this.rightMost[0]][this.rightMost[1]]) {
+            // this.rightMost > 9 ? this.move('left') : this.move('right');
+            this.move('left');
+            this.setOuterSquares();
+        }
+
+        while (this.leftMost[1] < 0 || field[this.leftMost[0]][this.leftMost[1]]) {
+            // this.rightMost > 9 ? this.move('left') : this.move('right');
+            if (field[this.rightMost[0]][this.rightMost[1] + 1]) {
+                this.move('up');
+            } else {
+                this.move('right');
+            }
+            this.setOuterSquares();
         }
     }
 
@@ -280,11 +317,12 @@ export default class Piece {
     }
 
     rightSideBlocked(field) {
+        // if (this.position.top[0][0] < 0) return false;
         let result = false;
         this.sideSquares().right.forEach(coordinatePair => {
             let [row, col] = [coordinatePair[0], coordinatePair[1]];
             // if any right facing square hits the wall or another piece
-            if (col === 9 || field[row][col + 1]) {
+            if (col === 9 || (field[row] && field[row][col + 1] !== "x")) {
                 result = true;
             }
         });
@@ -292,11 +330,12 @@ export default class Piece {
     }
 
     leftSideBlocked(field) {
+        // if (this.position.top[0][0] < 0) return false;
         let result = false;
         this.sideSquares().left.forEach(coordinatePair => {
             let [row, col] = [coordinatePair[0], coordinatePair[1]];
             // if any left facing square hits the wall or another piece
-            if (col === 0 || field[row][col - 1]) {
+            if (col === 0 || (field[row] && field[row][col - 1] !== "x")) {
                 result = true;
             }
         });

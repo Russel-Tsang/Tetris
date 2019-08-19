@@ -20,4 +20,8 @@ export default class OPiece extends Piece {
     turnRight() {
         return;
     }
+    
+    turnLeft() {
+        return;
+    }
 } 

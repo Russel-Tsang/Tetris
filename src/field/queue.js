@@ -15,5 +15,6 @@ export default class Queue {
 
 export const adjustQueueHeight = (fieldNum, percentage) => {
     let queueMeter = document.querySelector(`.queue-meter.field-${fieldNum}`);
+    if (percentage > 100) percentage = 100;
     queueMeter.style.height = `${percentage}%`
 }

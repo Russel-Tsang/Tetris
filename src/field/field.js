@@ -16,8 +16,6 @@ export default class Field {
         return field;
     }
 
-    //_isValidMove
-
     _createColumn() {
         let column = document.createElement("ul");
         column.classList.add(`field-column`, `field-${this.fieldNum}`);
@@ -37,7 +35,7 @@ export default class Field {
         return field;
     }
 
-    createCompleteField (container) {
+    createCompleteField(container) {
         let queue = new Queue(this.fieldNum);
         let nextBox = new NextBox(this.fieldNum);
         let holdBox = new HoldBox(this.fieldNum);
