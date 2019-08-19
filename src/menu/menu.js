@@ -6,8 +6,8 @@ export default class Menu {
     constructor() {
         this.menu = document.getElementById("menu");
 
-        this.optionsPlayer1 = { gameNum: 1, moveSpeed: 20, controls: { left: 37, right: 39, turnRight: 38, softDrop: 40, hold: 16, turnLeft: 67, hardDrop: 32 } }
-        this.optionsPlayer2 = { gameNum: 2, moveSpeed: 20, controls: { left: 188, right: 191, turnRight: 76, softDrop: 190, hold: 75, turnLeft: 86, hardDrop: 18 } }
+        this.optionsPlayer1 = { gameNum: 1, moveSpeed: 15, controls: { left: 37, right: 39, turnRight: 38, softDrop: 40, hold: 16, turnLeft: 75, hardDrop: 190 } }
+        this.optionsPlayer2 = { gameNum: 2, moveSpeed: 25, controls: { left: 65, right: 68, turnRight: 87, softDrop: 83, hold: 81, turnLeft: 192, hardDrop: 49 } }
 
         this.game1 = new Game(this.optionsPlayer1);
         this.game2 = new Game(this.optionsPlayer2);

@@ -25,11 +25,11 @@ export default class Game {
 
         this.gameNum = options.gameNum;
 
-        this.currentBag = this._shuffleBag(this.generateBag());
+        this.currentBag = this.shuffleBag(this.generateBag());
         this.currentPiece = '';
         this.holdPiece = '';
         this.ghostPosition = '';
-        this.nextBag = this._shuffleBag(this.generateBag());
+        this.nextBag = this.shuffleBag(this.generateBag());
 
         // prevents player from holding piece multiple times
         this.canHold = true;
@@ -42,7 +42,7 @@ export default class Game {
         };
 
         // for animations
-        this.dropSpeed = 1.5;
+        this.dropSpeed = 1;
         this.moveSpeed = options.moveSpeed;
         this.dropPiece = this.dropPiece.bind(this);
         this.drop = this.drop.bind(this);
@@ -144,9 +144,8 @@ export default class Game {
     // clears the color classes from the browser field
     clearGhostClass() {
         let fieldColumns = document.querySelectorAll(`.field-column.field-${this.gameNum}`);
-        let coordinateArrays = Object.values(this.ghostPosition);
-
-        coordinateArrays.forEach(array => {
+        
+        Object.values(this.ghostPosition).forEach(array => {
             array.forEach(coordinate => {
                 let [row, col] = [coordinate[0], coordinate[1]];
                 fieldColumns[col].children[row].classList = this.colors[this.currentPiece.colorCode];
@@ -183,7 +182,6 @@ export default class Game {
         coordinateArrays.forEach(array => {
             array.forEach(coordinate => {
                 let [row, col] = [coordinate[0], coordinate[1]];
-                if (this.currentPiece.bottomMost[0] >= 18) console.log(this.field);
                 if (this.field[row] && this.field[row][col] !== this.currentPiece.colorCode) this.field[row][col] = "x";
             })
         });
@@ -196,16 +194,18 @@ export default class Game {
         this.currentPiece.clearSelfFromBoard(this.field); 
         this.render();
 
-        if (this.holdPiece === '') {
+        if (!this.holdPiece) {
             // pass current piece name into generate piece in order to generate a new piece instance
             this.holdPiece = this._generatePiece(this.currentPiece.name);
             this.setCurrentPiece();
             // re-render next boxes to appropriately show current bag
-            this._showCurrentBag();
+            this.showCurrentBag();
         } else {
             this.currentPiece = this._generatePiece(this.currentPiece.name);
             [this.currentPiece, this.holdPiece] = [this.holdPiece, this.currentPiece];
         }
+        
+        // disable hold-piece right after player holds a piece
         this.canHold = false;
 
         this._populateHoldBox();
@@ -250,12 +250,13 @@ export default class Game {
     }
 
     // take one piece from nextBag and add to currentBag
-    _addToCurrentBag() {
+    addToCurrentBag() {
         this.currentBag.push(this.nextBag.shift());
     }
 
-    _showCurrentBag() {
+    showCurrentBag() {
         let boxes = document.getElementsByClassName(`next-box field-${this.gameNum}`);
+        debugger
         for (let i = 0; i < 5; i++) {
             this._populateNextBox(boxes[i], this.currentBag[i]);
         }
@@ -263,9 +264,10 @@ export default class Game {
 
     _populateNextBox(box, piece) {
         // columns is nodelist of <uls>
+        debugger
         let columns = box.children;
 
-        // remove colors from previous pieces
+        // remove colors from previous piece
         for (let i = 0; i < 5; i++) {
             for (let j = 0; j < 4; j++) {
                 // columns.children is nodelist of <lis>
@@ -273,6 +275,7 @@ export default class Game {
             }
         }
 
+        // populate box with new piece
         piece.displaySquares.forEach(square => {
             let [col, row] = [square[0], square[1]];
             columns[col].children[row].classList.add(this.colors[piece.colorCode]);
@@ -280,12 +283,12 @@ export default class Game {
     }
 
     // refill next bag, will only be called once nextBag becomes empty
-    _refillNextBag() {
+    refillNextBag() {
         this.nextBag = this.generateBag();
     }
 
     // implementation of shuffle found on https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array#2450976
-    _shuffleBag(bag) {
+    shuffleBag(bag) {
         var currentIndex = bag.length, temporaryValue, randomIndex;
 
         // While there remain elements to shuffle...
@@ -304,9 +307,12 @@ export default class Game {
     }
     // implementation of shuffle found on https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array#2450976
 
-    // look through field, if field[row][col] contains a number > 0, fill that spot with the respective color. Else, remove color
+    // look through field, if field[row][col] contains a number > 0, fill that spot with the respective color. 
+    // if contains an 'x', populate with ghost piece styles.
+    // else, remove color
     render() {
-        if (this.currentPiece.rightMost[1] > 9 || this.currentPiece.leftMost[1] < 0) return;
+        
+        // if (this.currentPiece.rightMost[1] > 9 || this.currentPiece.leftMost[1] < 0) return;
         let fieldColumns = document.querySelectorAll(`.field-column.field-${this.gameNum}`);
         this.field.forEach((row, rowIdx) => {
             row.forEach((col, colIdx) => {
@@ -317,12 +323,7 @@ export default class Game {
                     fieldColumns[colIdx].children[rowIdx].classList.add(this.colors[squareValue]);
                     fieldColumns[colIdx].children[rowIdx].classList.remove(`x-${this.colors[this.currentPiece.colorCode]}`);
                 } else {
-                    Object.values(this.colors).forEach(color => {
-                        if (fieldColumns[colIdx]) {
-                            fieldColumns[colIdx].children[rowIdx].classList.remove(color);
-                            fieldColumns[colIdx].children[rowIdx].classList.remove(`x-${color}`);
-                        }
-                    })
+                    fieldColumns[colIdx].children[rowIdx].classList = "";
                 }
             });
         });
@@ -338,9 +339,7 @@ export default class Game {
                     // pass field so piece can check field wall before turning
                     this.clearGhostPosition();
                     this.currentPiece.move("turnRight", this.field);
-                    if (this.currentPiece.rightMost[1] < 10) {
-                        this.currentPiece.populateField(this.field);
-                    }
+                    this.currentPiece.populateField(this.field);
                     this.setGhostPosition();
                     break;
                 // C key
@@ -355,18 +354,18 @@ export default class Game {
                 case this.controls.left:
                     this.keyHeld.left = true;
                     if (this.currentPiece.leftSideBlocked(this.field)) break;
-                    this.movePiece(this.moveSpeed, "left");
+                    this.movePiece("left");
                     break;
                 // right key
                 case this.controls.right:
                     this.keyHeld.right = true;
                     if (this.currentPiece.rightSideBlocked(this.field)) break;
-                    this.movePiece(this.moveSpeed, "right");
+                    this.movePiece("right");
                     break;
                 // down key
                 case this.controls.softDrop:
                     this.keyHeld.down = true;
-                    this.movePiece(this.moveSpeed, "down");
+                    this.movePiece("down");
                     break;
                 // shift key
                 case this.controls.hold: 
@@ -393,8 +392,6 @@ export default class Game {
                     break;
             }
             this.currentPiece.setOuterSquares();
-            // messes up with piece color
-            // this.currentPiece.populateField(this.field);
             this.render();
         });
 
@@ -507,9 +504,9 @@ export default class Game {
         }
     }
 
-    movePiece(fps, direction) {
+    movePiece(direction) {
         // Do whatever
-        this.animate[direction].fpsInterval = 1000 / fps;
+        this.animate[direction].fpsInterval = 1000 / this.moveSpeed;
         this.animate[direction].then = Date.now();
         this.animate[direction].startTime = this.animate[direction].then;
         this.move(direction);
@@ -534,19 +531,18 @@ export default class Game {
                 direction === "down" && !this.currentPiece.isFalling(this.field)
                 || 
                 this.keyHeld.right && this.keyHeld.left
-            ) { 
-                // this.clearGhostPosition();
-                // this.setGhostPosition();
-                return; 
-            }
+            ) return; 
+
             this.currentPiece.move(direction);
-            // this.clearGhostPosition();
             this.currentPiece.populateField(this.field);
-            // causing ghost position lag
-            this.clearGhostPosition();
-            this.setGhostPosition();
+
+            // don't need to re-populate ghost position if the piece is soft-dropping
+            if (direction !== "down") {
+                this.clearGhostPosition();
+                this.setGhostPosition();
+            }
+
             this.render();
-            // break;
         }
     }
 
@@ -571,9 +567,9 @@ export default class Game {
         } else {
             this.currentPiece.populateField(this.field);
         }
-        this._addToCurrentBag();
-        this._showCurrentBag();
-        if (!this.nextBag.length) this._refillNextBag();
+        this.addToCurrentBag();
+        this.showCurrentBag();
+        if (!this.nextBag.length) this.refillNextBag();
         this.setGhostPosition();
         // drop piece at given fps
         this.dropPiece(this.dropSpeed);

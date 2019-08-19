@@ -22,7 +22,7 @@ export default class Piece {
         this.bottomMost = bottomMost;
     }
 
-    populateField(field, atTop) {
+    populateField(field) {
         let coordinateArrays = Object.values(this.position);
 
         coordinateArrays.forEach(array => {
@@ -169,8 +169,6 @@ export default class Piece {
             }
         });
         this.setRemoveSquares(oldPosition);
-        // causing issues with turning into the field???:
-        // this.populateField(field);
 
         // find outer-most squares to see if piece is obstructed
         // if so, push piece back into field
@@ -189,13 +187,11 @@ export default class Piece {
         }
 
         while (this.rightMost[1] > 9 || field[this.rightMost[0]][this.rightMost[1]]) {
-            // this.rightMost > 9 ? this.move('left') : this.move('right');
             this.move('left');
             this.setOuterSquares();
         }
 
         while (this.leftMost[1] < 0 || field[this.leftMost[0]][this.leftMost[1]]) {
-            // this.rightMost > 9 ? this.move('left') : this.move('right');
             if (field[this.rightMost[0]][this.rightMost[1] + 1]) {
                 this.move('up');
             } else {
@@ -321,8 +317,8 @@ export default class Piece {
         let result = false;
         this.sideSquares().right.forEach(coordinatePair => {
             let [row, col] = [coordinatePair[0], coordinatePair[1]];
-            // if any right facing square hits the wall or another piece
-            if (col === 9 || (field[row] && field[row][col + 1] !== "x")) {
+            // if any right facing square hits the wall or another piece, not including the ghost piece
+            if (col === 9 || (field[row] && field[row][col + 1] && field[row + 1][col] !== "x")) {
                 result = true;
             }
         });
@@ -334,8 +330,8 @@ export default class Piece {
         let result = false;
         this.sideSquares().left.forEach(coordinatePair => {
             let [row, col] = [coordinatePair[0], coordinatePair[1]];
-            // if any left facing square hits the wall or another piece
-            if (col === 0 || (field[row] && field[row][col - 1] !== "x")) {
+            // if any left facing square hits the wall or another piece, not including the ghost piece
+            if (col === 0 || (field[row] && field[row][col - 1] && field[row][col - 1] !== "x")) {
                 result = true;
             }
         });
