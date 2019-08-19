@@ -10,15 +10,20 @@ body {
     background-image: url('../images/tetris-background.jpg');
     background-size: cover;
     background-repeat: no-repeat;
+    font-family: 'Exo 2', sans-serif;
 }
 
 /* line up columns next to each other */
-#field-container {
+#field-container-1 {
     display: flex;
 }
 
 #field-container-2 {
     display: flex;
+}
+
+.field-column {
+    transition: all 1s;
 }
 
 .field-column, .hold-column, .next-column {
@@ -225,7 +230,54 @@ li.x-orange {
 h2 {
     /* border-radius: 2px 0px 0px 0px; */
     font-size: 20px;
-    font-family: 'Exo 2', sans-serif;
     background: var(--main-field-color);
     text-align: center;
 }
+
+#menu {
+    width: 80%;
+    height: 500px;
+    /* margin-top: 15vh; */
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: center;
+    margin: auto;
+}
+
+.button-container {
+    display: flex;
+    justify-content: space-evenly;
+    width: 100%;
+}
+
+.single-player-button, .multiplayer-button {
+    background: #002977;
+    border-radius: 20px;
+    border: 5px black solid;
+    font-size: 30px;
+    padding: 50px;
+    cursor: pointer;
+    width: 200px;
+    text-align: center;
+}
+
+.game-over-div {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+}
+
+.game-over-heading {
+    position: relative;
+    top: 30%;
+    background: transparent;
+    font-size: 80px;
+    color: white;
+}
+
+h1 {
+    font-size: 90px;
+}
+
