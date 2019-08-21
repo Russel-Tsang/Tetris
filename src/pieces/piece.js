@@ -4,6 +4,15 @@ export default class Piece {
         this.rightMost = '';
         this.bottomMost = '';
         this.topMost = '';
+
+        this.rotationState = 0;
+
+        this.offsetGuide = {
+            0: [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0]],
+            1: [[0, 0], [0, 1], [-1, 1], [2, 0], [2, 1]],
+            2: [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0]],
+            3: [[0, 0], [0, -1], [-1, -1], [2, 0], [2, -1]]
+        }
     }
 
     setOuterSquares() {
@@ -90,13 +99,11 @@ export default class Piece {
     }
 
     clearSelfFromBoard(field) {
-        debugger
         Object.values(this.position).forEach(coordinateArrays => coordinateArrays.forEach(coordinate => {
             let row = coordinate[0];
             let col = coordinate[1];
             if (row < 20 && row >= 0 && col >= 0 && col < 10) field[row][col] = 0;
         }));
-        debugger
     }
 
     move(direction, field) {
@@ -174,30 +181,18 @@ export default class Piece {
         // if so, push piece back into field
         this.setOuterSquares();
 
-        // in the case that piece is turned through floor
-        while ((this.bottomMost[0] > 19 || field[this.bottomMost[0]][this.bottomMost[1]])) {
-            this.move('up');
-            this.setOuterSquares();
-        }
+        // reset rotation state, which is tracked for implementing super rotation system
+        debugger
+        this.rotationState = this.rotationState === 3 ? 0 : this.rotationState + 1;
+        debugger
 
-        // in the case that the IPiece is turned through the field ceiling
-        while (this.topMost[0] < 0 || field[this.topMost[0]][this.topMost[1]]) {
-            this.move('down');
-            this.setOuterSquares();
-        }
-
-        while (this.rightMost[1] > 9 || field[this.rightMost[0]][this.rightMost[1]]) {
-            this.move('left');
-            this.setOuterSquares();
-        }
-
-        while (this.leftMost[1] < 0 || field[this.leftMost[0]][this.leftMost[1]]) {
-            if (field[this.rightMost[0]][this.rightMost[1] + 1]) {
-                this.move('up');
-            } else {
-                this.move('right');
+        let newSquares = [...this.position.top, ...this.position.middle, ...this.position.bottom];
+        for (let i in newSquares) {
+            let [row, col] = [newSquares[i][0], newSquares[i][1]];
+            if (field[row] === undefined || field[row][col] === undefined || field[row][col]) {
+                this.wallKick(field, "turnRight");
+                break;
             }
-            this.setOuterSquares();
         }
     }
 
@@ -232,33 +227,20 @@ export default class Piece {
         // if through wall, push piece back into field
         this.setOuterSquares();
 
-        // in the case that piece is turned through floor
-        while ((this.bottomMost[0] > 19 || field[this.bottomMost[0]][this.bottomMost[1]])) {
-            this.move('up');
-            this.setOuterSquares();
-        }
+        // reset rotation state, which is tracked for implementing super rotation system
+        debugger
+        this.rotationState = this.rotationState === 0 ? 3 : this.rotationState - 1;
+        debugger
 
-        // in the case that the IPiece is turned through the field ceiling
-        while (this.topMost[0] < 0 || field[this.topMost[0]][this.topMost[1]]) {
-            this.move('down');
-            this.setOuterSquares();
-        }
-
-        while (this.rightMost[1] > 9 || field[this.rightMost[0]][this.rightMost[1]]) {
-            // this.rightMost > 9 ? this.move('left') : this.move('right');
-            this.move('left');
-            this.setOuterSquares();
-        }
-
-        while (this.leftMost[1] < 0 || field[this.leftMost[0]][this.leftMost[1]]) {
-            // this.rightMost > 9 ? this.move('left') : this.move('right');
-            if (field[this.rightMost[0]][this.rightMost[1] + 1]) {
-                this.move('up');
-            } else {
-                this.move('right');
+        let newSquares = [...this.position.top, ...this.position.middle, ...this.position.bottom];
+        for (let i in newSquares) {
+            let [row, col] = [newSquares[i][0], newSquares[i][1]];
+            if (field[row] === undefined || field[row][col] === undefined || field[row][col]) {
+                this.wallKick(field, "turnLeft");
+                break;
             }
-            this.setOuterSquares();
         }
+
     }
 
     // compare old position of piece with new position 
@@ -336,5 +318,50 @@ export default class Piece {
             }
         });
         return result;
+    }
+
+    wallKick(field, action) {
+        let validSpot, startingOffset;
+        if (action === "turnRight") {
+            startingOffset = this.rotationState === 0 ? this.offsetGuide[3] : this.offsetGuide[this.rotationState - 1];
+        } else {
+            startingOffset = this.rotationState === 3 ? this.offsetGuide[0] : this.offsetGuide[this.rotationState + 1];
+        }
+        let nextOffset = this.offsetGuide[this.rotationState];
+        debugger
+        for (let i = 0; i < 5; i++) {
+            validSpot = true;
+            let basePosition = {
+                top: this.position.top.map(array => array.slice()),
+                middle: this.position.middle.map(array => array.slice()),
+                bottom: this.position.bottom.map(array => array.slice()),
+            }
+            let baseTurningPoint = this.turningPoint.slice();
+
+            let startingTranslation = startingOffset[i];
+            let potentialTranslation = nextOffset[i];
+            let rowShift = startingTranslation[0] - potentialTranslation[0];
+            let colShift = startingTranslation[1] - potentialTranslation[1];
+            let translateVertical = rowShift > 0 ? () => this.move("up") : () => this.move("down");
+            let translateHorizontal = colShift > 0 ? () => this.move("right") : () => this.move("left");
+            if (i === 1) debugger;
+            for (let numTimesRowShifted = 0; numTimesRowShifted < Math.abs(rowShift); numTimesRowShifted++) {
+                translateVertical();
+            }
+            for (let numTimesColShifted = 0; numTimesColShifted < Math.abs(colShift); numTimesColShifted++) {
+                translateHorizontal();
+            }
+            let newPosition = [...this.position.top, ...this.position.middle, ...this.position.bottom];
+            for (let i in newPosition) {
+                let [row, col] = [newPosition[i][0], newPosition[i][1]];
+                if (field[row] === undefined || field[row][col] === undefined || field[row][col] > 0) {
+                    validSpot = false;
+                    this.position = basePosition;
+                    this.turningPoint = baseTurningPoint;
+                    break;
+                }
+            }
+            if (validSpot) break;
+        }
     }
 }

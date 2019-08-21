@@ -311,7 +311,7 @@ export default class Game {
     // if contains an 'x', populate with ghost piece styles.
     // else, remove color
     render() {
-        
+        debugger
         // if (this.currentPiece.rightMost[1] > 9 || this.currentPiece.leftMost[1] < 0) return;
         let fieldColumns = document.querySelectorAll(`.field-column.field-${this.gameNum}`);
         this.field.forEach((row, rowIdx) => {
@@ -572,7 +572,7 @@ export default class Game {
         if (!this.nextBag.length) this.refillNextBag();
         this.setGhostPosition();
         // drop piece at given fps
-        this.dropPiece(this.dropSpeed);
+        // this.dropPiece(this.dropSpeed);    
     }
 
     gameOver(winner) {
