@@ -7,7 +7,7 @@ export default class Menu {
         this.menu = document.getElementById("menu");
 
         this.optionsPlayer1 = { gameNum: 1, moveSpeed: 25, controls: { left: 65, right: 68, turnRight: 87, softDrop: 83, hold: 81, turnLeft: 192, hardDrop: 49 } }
-        this.optionsPlayer2 = { gameNum: 2, moveSpeed: 25, controls: { left: 37, right: 39, turnRight: 38, softDrop: 40, hold: 16, turnLeft: 75, hardDrop: 190 } }
+        this.optionsPlayer2 = { gameNum: 2, moveSpeed: 15, controls: { left: 37, right: 39, turnRight: 38, softDrop: 40, hold: 190, turnLeft: 75, hardDrop: 16 } }
             
 
         this.game1 = new Game(this.optionsPlayer1);

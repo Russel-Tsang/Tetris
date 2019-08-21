@@ -107,6 +107,7 @@ export default class Piece {
     }
 
     move(direction, field) {
+        let tSpin = false;
         let oldPosition = {
             top: this.position.top.map(array => array.slice()),
             middle: this.position.middle.map(array => array.slice()),
@@ -120,8 +121,9 @@ export default class Piece {
                 this.turningPoint = [this.turningPoint[0], this.turningPoint[1] - 1];
                 break;
             case "turnRight":
-                // defer to subclass "turn" method
-                this.turnRight(field, oldPosition);
+                // defer to "turn" method
+                // tSpin will either be truthy or falsy, tracked for sending more lines during multiplayer
+                tSpin = this.turnRight(field, oldPosition);
                 break;
             case "right":
                 this.position.top = this.position.top.map(array => [array[0], array[1] + 1]);
@@ -146,7 +148,8 @@ export default class Piece {
                 break;
         }
         this.setOuterSquares();
-        this.setRemoveSquares(oldPosition);
+        this.setRemoveSquares(oldPosition, field);
+        return tSpin;
     }
 
     turnRight(field, oldPosition) {
@@ -182,16 +185,13 @@ export default class Piece {
         this.setOuterSquares();
 
         // reset rotation state, which is tracked for implementing super rotation system
-        debugger
         this.rotationState = this.rotationState === 3 ? 0 : this.rotationState + 1;
-        debugger
 
         let newSquares = [...this.position.top, ...this.position.middle, ...this.position.bottom];
         for (let i in newSquares) {
             let [row, col] = [newSquares[i][0], newSquares[i][1]];
             if (field[row] === undefined || field[row][col] === undefined || field[row][col]) {
-                this.wallKick(field, "turnRight");
-                break;
+                return this.wallKick(field, "turnRight");
             }
         }
     }
@@ -228,9 +228,7 @@ export default class Piece {
         this.setOuterSquares();
 
         // reset rotation state, which is tracked for implementing super rotation system
-        debugger
         this.rotationState = this.rotationState === 0 ? 3 : this.rotationState - 1;
-        debugger
 
         let newSquares = [...this.position.top, ...this.position.middle, ...this.position.bottom];
         for (let i in newSquares) {
@@ -244,14 +242,20 @@ export default class Piece {
     }
 
     // compare old position of piece with new position 
-    setRemoveSquares(oldPosition) {
+    setRemoveSquares(oldPosition, field) {
         let oldSquares = [];
         let newSquares = [];
         Object.values(oldPosition).forEach(coordinatesArray => oldSquares.push(...coordinatesArray));
         Object.values(this.position).forEach(coordinatesArray => newSquares.push(...coordinatesArray));
         // keep track of squares that the positions do not have in common (squares to remove color from)
         this.removeSquares = oldSquares.filter(oldSquare => {
-            if (!this._includes(oldSquare, newSquares)) return oldSquare;
+            if (!field) {
+                if (!this._includes(oldSquare, newSquares)) return oldSquare;
+            // if field argument is passed, check the field to make sure to not clear squares of other pieces
+            } else {
+                if (!this._includes(oldSquare, newSquares) && !field[oldSquare[0]][oldSquare[1]]) return oldSquare;
+            }
+            
         });
     }
 
@@ -328,7 +332,6 @@ export default class Piece {
             startingOffset = this.rotationState === 3 ? this.offsetGuide[0] : this.offsetGuide[this.rotationState + 1];
         }
         let nextOffset = this.offsetGuide[this.rotationState];
-        debugger
         for (let i = 0; i < 5; i++) {
             validSpot = true;
             let basePosition = {
@@ -344,7 +347,6 @@ export default class Piece {
             let colShift = startingTranslation[1] - potentialTranslation[1];
             let translateVertical = rowShift > 0 ? () => this.move("up") : () => this.move("down");
             let translateHorizontal = colShift > 0 ? () => this.move("right") : () => this.move("left");
-            if (i === 1) debugger;
             for (let numTimesRowShifted = 0; numTimesRowShifted < Math.abs(rowShift); numTimesRowShifted++) {
                 translateVertical();
             }
@@ -361,7 +363,10 @@ export default class Piece {
                     break;
                 }
             }
-            if (validSpot) break;
+            // allows tSpin variable to be truthy
+            if (this.name === "TPiece" && validSpot) {
+                return true;
+            }
         }
     }
 }

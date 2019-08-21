@@ -90,6 +90,8 @@ export default class Game {
         this.controls = options.controls;
         this.upcomingLines = 0;
         this.combo = -1;
+        this.tSpin = false;
+        this.tSpinStreak = false;
         this.comboGuide = {
             0: 0,
             1: 0, 
@@ -256,7 +258,6 @@ export default class Game {
 
     showCurrentBag() {
         let boxes = document.getElementsByClassName(`next-box field-${this.gameNum}`);
-        debugger
         for (let i = 0; i < 5; i++) {
             this._populateNextBox(boxes[i], this.currentBag[i]);
         }
@@ -264,7 +265,6 @@ export default class Game {
 
     _populateNextBox(box, piece) {
         // columns is nodelist of <uls>
-        debugger
         let columns = box.children;
 
         // remove colors from previous piece
@@ -311,7 +311,6 @@ export default class Game {
     // if contains an 'x', populate with ghost piece styles.
     // else, remove color
     render() {
-        debugger
         // if (this.currentPiece.rightMost[1] > 9 || this.currentPiece.leftMost[1] < 0) return;
         let fieldColumns = document.querySelectorAll(`.field-column.field-${this.gameNum}`);
         this.field.forEach((row, rowIdx) => {
@@ -332,13 +331,15 @@ export default class Game {
     keyListener() {
         document.body.addEventListener("keydown", event => {
             this.currentPiece.setOuterSquares();
+            console.log(this);
             // this.clearGhostPosition();
             switch(event.which) {
                 // up key
                 case this.controls.turnRight:
                     // pass field so piece can check field wall before turning
                     this.clearGhostPosition();
-                    this.currentPiece.move("turnRight", this.field);
+                    this.tSpin = this.currentPiece.move("turnRight", this.field);
+                    console.log(this);
                     this.currentPiece.populateField(this.field);
                     this.setGhostPosition();
                     break;
@@ -411,6 +412,7 @@ export default class Game {
     }
 
     clearLines(lowest, highest, numLinesCleared) {
+        if (lowest < 0) return;
         // base case: if we reach a row that is higher than the highest, then return number of lines that were cleared
         if (lowest < highest) {
             return numLinesCleared;
@@ -441,15 +443,36 @@ export default class Game {
         let lowest = this.currentPiece.position.bottom[0][0];
         // in case of line piece, which may not have this.position.top
         let highest = !this.currentPiece.position.top.length ? lowest : this.currentPiece.position.top[0][0];
-        if (!this.field[lowest]) console.log("dasd");
+        // check if a TPiece was spun in place
+        if (this.currentPiece.name === "TPiece") {
+            let [leftMostRow, rightMostRow] = [this.currentPiece.leftMost[0], this.currentPiece.rightMost[0]];
+            let [leftMostCol, rightMostCol] = [this.currentPiece.leftMost[1], this.currentPiece.rightMost[1]];
+            if (this.field[leftMostRow - 1] && this.field[rightMostRow - 1]) {
+                if (this.field[leftMostRow - 1][leftMostCol] || this.field[rightMostRow - 1][rightMostCol]) this.tSpin = true;
+            }
+        }
         let numLinesCleared = this.clearLines(lowest, highest, 0);
 
         // in the case of multiplayer, send cleared lines to opponent and receive potential lines
         if (this.opponent) {
+            if (this.tSpinStreak === true) debugger
             if (numLinesCleared > 0) {
                 this.combo += 1;
-                let numLines = numLinesCleared === 4 ? 4 : numLinesCleared - 1;
+                let numLines
+                if (numLinesCleared < 4) {
+                    if (this.currentPiece.name === "TPiece" && this.tSpin) {
+                        numLines = numLinesCleared === 3 ? 6 : 4;
+                    } else {
+                        numLines = numLinesCleared - 1;
+                        this.tSpinStreak = false;
+                    }
+                } else {
+                    numLines = 4;
+                }
+
                 numLines += this.comboGuide[this.combo];
+                if (this.tSpinStreak) numLines += 2;
+
                 if (this.upcomingLines > 0) {
                     this.upcomingLines -= numLines;
                     if (this.upcomingLines < 0) {
@@ -461,6 +484,8 @@ export default class Game {
                     }
                 } else {
                     this.opponent.addLinesToQueue(numLines);
+                    debugger
+                    if (this.tSpin === true) this.tSpinStreak = true;
                 }
             } else {
                 this.combo = -1;
@@ -470,7 +495,8 @@ export default class Game {
                 }
             } 
         }
-
+        // reset tSpin tracker
+        this.tSpin = false
         this.clearGhostClass();
         cancelAnimationFrame(this.handleClear.drop);
         this.play();
@@ -481,12 +507,12 @@ export default class Game {
         this.animate.drop.fpsInterval = 1000 / fps;
         this.animate.drop.then = Date.now();
         this.animate.drop.startTime = this.then;
-        this.drop();
+        this.drop(this.field);
     }
 
     // inspiration for throttling requestAnimationFrame from https://stackoverflow.com/questions/19764018/controlling-fps-with-requestanimationframe
     drop() {
-        this.handleClear.drop = requestAnimationFrame(this.drop);
+        this.handleClear.drop = requestAnimationFrame(() => this.drop(this.field));
         this.animate.drop.now = Date.now();
         let elapsed = this.animate.drop.now - this.animate.drop.then;
         if (elapsed > this.animate.drop.fpsInterval) {
@@ -497,7 +523,7 @@ export default class Game {
             if (!this.currentPiece.isFalling(this.field)) {
                 this.handlePieceStop(this.handleClear.drop);
             }
-            if (this.currentPiece.bottomMost[0] != 0) this.currentPiece.drop();
+            if (this.currentPiece.bottomMost[0] != 0) this.currentPiece.drop(this.field);
             // this.setGhostPosition();
             this.currentPiece.populateField(this.field); // keep only one populate field?
             this.render();
@@ -550,7 +576,7 @@ export default class Game {
         let atTop = false;
         try {
             while (this.field[this.currentPiece.position.bottom[0][0]][3] || this.field[this.currentPiece.position.bottom[0][0]][4] || this.field[this.currentPiece.position.bottom[0][0]][5] || this.field[this.currentPiece.position.bottom[0][0]][6]) {
-                this.currentPiece.move("up");
+                this.currentPiece.move("up", this.field);
                 atTop = true;
             }
         } catch {
@@ -561,7 +587,6 @@ export default class Game {
     
     play() {
         this.setCurrentPiece();
-        debugger
         if (this.handleTopPiece() === true) {
             this.currentPiece.populateField(this.field, "atTop");
         } else {
@@ -572,7 +597,7 @@ export default class Game {
         if (!this.nextBag.length) this.refillNextBag();
         this.setGhostPosition();
         // drop piece at given fps
-        // this.dropPiece(this.dropSpeed);    
+        this.dropPiece(this.dropSpeed);    
     }
 
     gameOver(winner) {
@@ -590,7 +615,7 @@ export default class Game {
         if (winner)  {
             winnerHeading = document.createElement("h2");
             winnerHeading.classList.add("game-over-heading");
-            winnerHeading.innerHTML = `PLAYER ${winner} WON`;
+            winnerHeading.innerHTML = `PLAYER ${winner} WINS`;
             gameOverScreen.append(winnerHeading)
         }   
 
