@@ -1,5 +1,3 @@
-import Game from '../game/game';
-
 export default class Multiplayer {
     constructor(player1, player2) {
         this.player1 = player1;
