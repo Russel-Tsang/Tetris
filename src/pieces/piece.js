@@ -364,8 +364,12 @@ export default class Piece {
                 }
             }
             // allows tSpin variable to be truthy
-            if (this.name === "TPiece" && validSpot) {
-                return true;
+            if (validSpot) {
+                if (this.name === "TPiece") {
+                    return true;
+                } else {
+                    return;
+                }
             }
         }
     }
