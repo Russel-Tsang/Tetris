@@ -252,6 +252,11 @@ h2 {
     width: 100%;
 }
 
+.button-container > *:hover {
+    background: #0050e6;
+    transition: all .3s;
+}
+
 .single-player-button, .multiplayer-button {
     background: #002977;
     border-radius: 20px;
@@ -281,3 +286,101 @@ h1 {
     font-size: 90px;
 }
 
+/* controls */
+
+.single-player-controls {
+    background: grey;
+    width: 400px;
+    height: 600px;
+}
+
+.controls-modal {
+    position: absolute;
+    top: 0;
+    background: rgba(0, 0, 0, 0.7);
+    width: 100vw;
+    height: 100vh;
+}
+
+.controls-container {
+    display: flex;
+    justify-content: space-around;
+}
+
+.controls {
+    background: black;
+    color: white;
+    width: 400px;
+    height: 400px;
+    border-radius: 10px;
+    border: 8px var(--main-field-color) solid;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    position: relative;
+}
+
+.controls-modal .controls {
+    margin-top: 82px;
+}
+
+.controls header {
+    width: 30%;
+    color: black;
+    text-align: center;
+    margin: 0 auto;
+    border: 8px var(--main-field-color) solid;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    /* border-bottom: 8px black solid; */
+    position: absolute;
+    top: -46px;
+    left: -2%;
+    background: var(--main-field-color);
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.controls div {
+    display: flex;
+    justify-content: space-around;
+}
+
+.controls span {
+    text-align: center;
+}
+
+.keyboard-key {
+    width: 50px;
+}
+
+img.keyboard-key.shift-key {
+    width: 110px;
+}
+
+img.keyboard-key.space-key {
+    width: 300px;
+}
+
+.close-modal-link {
+    color: white;
+    width: 300px;
+    margin: 0 auto;
+    text-align: center;
+    font-size: 36px;
+    border-bottom: 3px white solid;
+    margin-top: 80px;
+    cursor: pointer;
+}
+
+/* timer */
+.timer {
+    display: flex;
+    color: white;
+    font-family: monospace;
+    text-align: center;
+    font-size: 70px;
+}
