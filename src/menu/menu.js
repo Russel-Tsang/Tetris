@@ -1,13 +1,16 @@
 import Game from '../game/game';
 import Field from '../field/field';
 import Multiplayer from '../multiplayer/multiplayer';
+import Modal from '../modal/modal';
+import SinglePlayerContent from '../modal/singlePlayerContent';
+import MultiplayerContent from '../modal/multiplayerContent';
 
 export default class Menu {
     constructor() {
         this.menu = document.getElementById("menu");
 
         this.optionsPlayer1 = { gameNum: 1, moveSpeed: 25, controls: { left: 65, right: 68, turnRight: 87, softDrop: 83, hold: 81, turnLeft: 192, hardDrop: 49 } }
-        this.optionsPlayer2 = { gameNum: 2, moveSpeed: 15, controls: { left: 37, right: 39, turnRight: 38, softDrop: 40, hold: 190, turnLeft: 75, hardDrop: 16 } }
+        this.optionsPlayer2 = { gameNum: 2, moveSpeed: 15, controls: { left: 37, right: 39, turnRight: 38, softDrop: 40, hold: 16, turnLeft: 75, hardDrop: 190 } }
             
 
         this.game1 = new Game(this.optionsPlayer1);
@@ -20,6 +23,10 @@ export default class Menu {
 
         this.fieldContainer1 = document.getElementById("field-container-1");
         this.fieldContainer2 = document.getElementById("field-container-2");
+
+        this.singlePlayerContent = new SinglePlayerContent();
+        this.multiplayerContent = new MultiplayerContent();
+        this.modal = new Modal();
     }
 
     renderButtons() {
@@ -49,11 +56,17 @@ export default class Menu {
     renderSinglePlayer() {
         document.body.removeChild(this.menu);
         document.body.style.justifyContent = 'none';
+        this.singlePlayerContent.createTimerAndControls();
         this.field1.createCompleteField(this.fieldContainer1);
         this.fieldContainer1.style.position = 'relative';
         this.fieldContainer1.style.left = '14vw';
         this.game1.keyListener();
+        this.game1.changeControls();
         this.game1.play();
+        this.game1.startElevating(5000);
+        this.game1.adjustElevate();
+        this.singlePlayerContent.createTimer();
+        this.game1.startTimer();
     }
 
     renderMultiplayer() {
@@ -64,7 +77,13 @@ export default class Menu {
         this.field2.createCompleteField(this.fieldContainer2);
         this.game2.keyListener();
 
-        this.multiplayerMode.startMultiplayer();
+        let controlsContainer = document.createElement('div');
+        controlsContainer.classList.add('controls-container')
+        controlsContainer.appendChild(this.multiplayerContent.createControlsContent('player1'));
+        controlsContainer.appendChild(this.multiplayerContent.createControlsContent('player2'));
+        this.modal.create();
+        this.modal.appendChild(controlsContainer);
+        this.modal.appendChild(this._createCloseModalLink());
     }
 
     renderMenu() {
@@ -74,5 +93,17 @@ export default class Menu {
             buttonContainer.appendChild(button);
         })
         this.menu.appendChild(buttonContainer);
+    }
+
+    _createCloseModalLink() {
+        let closeLink = document.createElement('div');
+        closeLink.classList.add('close-modal-link');
+        closeLink.innerHTML = "Let's get started.";
+
+        closeLink.addEventListener('click', () => {
+            this.modal.remove();
+            this.multiplayerMode.startMultiplayer();
+        });
+        return closeLink;
     }
 }
