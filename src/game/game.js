@@ -107,6 +107,12 @@ export default class Game {
             11: 4,
             12: 5
         };
+
+        // single player
+        this.startElevating = this.startElevating.bind(this);
+        this.clearElevateInterval = '';
+        this.elevateDelay = 5000;
+        this.clearTimer = '';
     }
 
     generateBag() {
@@ -331,7 +337,6 @@ export default class Game {
     keyListener() {
         document.body.addEventListener("keydown", event => {
             this.currentPiece.setOuterSquares();
-            console.log(this);
             // this.clearGhostPosition();
             switch(event.which) {
                 // up key
@@ -339,7 +344,6 @@ export default class Game {
                     // pass field so piece can check field wall before turning
                     this.clearGhostPosition();
                     this.tSpin = this.currentPiece.move("turnRight", this.field);
-                    console.log(this);
                     this.currentPiece.populateField(this.field);
                     this.setGhostPosition();
                     break;
@@ -484,7 +488,6 @@ export default class Game {
                     }
                 } else {
                     this.opponent.addLinesToQueue(numLines);
-                    debugger
                     if (this.tSpin === true) this.tSpinStreak = true;
                 }
             } else {
@@ -499,6 +502,7 @@ export default class Game {
         this.tSpin = false
         this.clearGhostClass();
         cancelAnimationFrame(this.handleClear.drop);
+        // this.startElevating();
         this.play();
     }
 
@@ -560,6 +564,7 @@ export default class Game {
             ) return; 
 
             this.currentPiece.move(direction);
+
             this.currentPiece.populateField(this.field);
 
             // don't need to re-populate ghost position if the piece is soft-dropping
@@ -620,6 +625,7 @@ export default class Game {
         }   
 
         document.body.appendChild(gameOverScreen);
+        this.stopTimer();
     }
 
     // multiplayer 
@@ -651,5 +657,51 @@ export default class Game {
         this.field = this.field.slice(numLines, 20).concat(garbageLines);
         this.upcomingLines = 0;
         this.render();
+    }
+
+    // single player
+    startElevating(elevateDelay) {
+        this.clearElevateInterval = setInterval(() => {
+            console.log(this.currentPiece);
+            this.clearGhostPosition();
+            this.currentPiece.clearSelfFromBoard(this.field);
+            this.upcomingLines += 1;
+            this.receiveUpcomingLines();
+            this.setGhostPosition();
+            this.currentPiece.populateField();
+            this.render();
+        }, elevateDelay)
+    }
+
+    adjustElevate() {
+        setInterval(() => {
+            if (this.clearElevateInterval) clearInterval(this.clearElevateInterval);
+            if (this.elevateDelay > 2000) this.elevateDelay -= 200;
+            this.startElevating(this.elevateDelay);
+        }, 10000);
+    }
+
+    startTimer() {
+        let minutes = document.querySelector('.minutes');
+        let seconds = document.querySelector('.seconds');
+        this.clearTimer = setInterval(() => {
+            let oldSecond = Number(seconds.innerHTML);
+            let oldMinute = Number(minutes.innerHTML);
+            if (oldSecond + 1 === 60) {
+                seconds.innerHTML = 0;
+                minutes.innerHTML = oldMinute + 1;
+            } else {
+                let newSeconds = Number(seconds.innerHTML) + 1 < 10 ? `0${Number(seconds.innerHTML) + 1}` : Number(seconds.innerHTML) + 1;
+                seconds.innerHTML = newSeconds;
+            }
+        }, 1000)
+    }
+
+    stopTimer() {
+        clearInterval(this.clearTimer);
+    }
+
+    changeControls() {
+        this.controls = { left: 37, right: 39, turnRight: 38, softDrop: 40, hold: 16, turnLeft: 67, hardDrop: 32 }
     }
 }
