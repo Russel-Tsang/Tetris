@@ -113,6 +113,7 @@ export default class Piece {
             middle: this.position.middle.map(array => array.slice()),
             bottom: this.position.bottom.map(array => array.slice()),
         }
+        this.oldTurningPoint = this.turningPoint.slice();
         switch (direction) {
             case "left":
                 this.position.top = this.position.top.map(array => [array[0], array[1] - 1]);
@@ -191,7 +192,7 @@ export default class Piece {
         for (let i in newSquares) {
             let [row, col] = [newSquares[i][0], newSquares[i][1]];
             if (field[row] === undefined || field[row][col] === undefined || field[row][col]) {
-                return this.wallKick(field, "turnRight");
+                return this.wallKick(field, "turnRight", oldPosition);
             }
         }
     }
@@ -234,7 +235,7 @@ export default class Piece {
         for (let i in newSquares) {
             let [row, col] = [newSquares[i][0], newSquares[i][1]];
             if (field[row] === undefined || field[row][col] === undefined || field[row][col]) {
-                this.wallKick(field, "turnLeft");
+                this.wallKick(field, "turnLeft", oldPosition);
                 break;
             }
         }
@@ -324,7 +325,7 @@ export default class Piece {
         return result;
     }
 
-    wallKick(field, action) {
+    wallKick(field, action, oldPosition) {
         let validSpot, startingOffset;
         if (action === "turnRight") {
             startingOffset = this.rotationState === 0 ? this.offsetGuide[3] : this.offsetGuide[this.rotationState - 1];
@@ -332,7 +333,13 @@ export default class Piece {
             startingOffset = this.rotationState === 3 ? this.offsetGuide[0] : this.offsetGuide[this.rotationState + 1];
         }
         let nextOffset = this.offsetGuide[this.rotationState];
-        for (let i = 0; i < 5; i++) {
+        // for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 6; i++) {
+            // if i === 5, there are no more potential positions to check and the piece's position is the initial position from before turning
+            if (i === 5) {
+                this.position = oldPosition;
+                return;
+            }
             validSpot = true;
             let basePosition = {
                 top: this.position.top.map(array => array.slice()),

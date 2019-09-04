@@ -668,7 +668,7 @@ export default class Game {
             this.upcomingLines += 1;
             this.receiveUpcomingLines();
             this.setGhostPosition();
-            this.currentPiece.populateField();
+            this.currentPiece.populateField(this.field);
             this.render();
         }, elevateDelay)
     }
