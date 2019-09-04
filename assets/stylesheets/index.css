@@ -384,3 +384,23 @@ img.keyboard-key.space-key {
     text-align: center;
     font-size: 70px;
 }
+
+.navbar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    width: 60px;
+    background: rgba(255, 255, 255, 0.8);
+    text-align: center; 
+    transition: all .5s; 
+}
+
+.navbar:hover {
+    background: rgba(255, 255, 255, 1);
+}
+
+.social-icon {
+    width: 40px;
+    margin-top: 30px;
+}
