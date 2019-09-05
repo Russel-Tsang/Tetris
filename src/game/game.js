@@ -652,7 +652,7 @@ export default class Game {
         }
         // if player reaches the top, player loses
         // slice allows player to continue playing if top middle is clear
-        if (!this.field[numLines - 1].slice(2,7).includes(0)) {
+        if (this.field[numLines - 1] && !this.field[numLines - 1].slice(2,7).includes(0)) {
             return;
         }
         this.field = this.field.slice(numLines, 20).concat(garbageLines);

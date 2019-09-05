@@ -271,8 +271,14 @@ h2 {
 
 .game-over-div {
     position: absolute;
-    height: 100%;
-    width: 100%;
+    width: 600px;
+    top: 120px;
+    background: black;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px;
+    border: 10px #1885cc solid;
 }
 
 .game-over-heading {
