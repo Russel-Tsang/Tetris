@@ -152,12 +152,10 @@ export default class Game {
     // clears the color classes from the browser field
     clearGhostClass() {
         let fieldColumns = document.querySelectorAll(`.field-column.field-${this.gameNum}`);
-        debugger
         Object.values(this.ghostPosition).forEach(array => {
             array.forEach(coordinate => {
                 let [row, col] = [coordinate[0], coordinate[1]];
                 let fieldSquare = fieldColumns[col].children[row];
-                debugger
                 if (fieldSquare) {
                     fieldSquare.classList = this.colors[this.currentPiece.colorCode];
                 }
@@ -424,7 +422,6 @@ export default class Game {
         if (lowest < 0) return;
         // base case: if we reach a row that is higher than the highest, then return number of lines that were cleared
         if (lowest < highest) {
-            debugger
             return numLinesCleared;
         };
         // recursive case: 
