@@ -338,7 +338,7 @@ export default class Game {
 
     keyListener() {
         document.body.addEventListener("keydown", event => {
-            if (this.gameIsOver) return;
+            if (this.gameIsOver || this.opponent.gameIsOver) return;
             this.currentPiece.setOuterSquares();
             // this.clearGhostPosition();
             switch(event.which) {
@@ -460,7 +460,6 @@ export default class Game {
 
         // in the case of multiplayer, send cleared lines to opponent and receive potential lines
         if (this.opponent) {
-            if (this.tSpinStreak === true) debugger
             if (numLinesCleared > 0) {
                 this.combo += 1;
                 let numLines
@@ -526,10 +525,11 @@ export default class Game {
             this.currentPiece.populateField(this.field);
             this.render();
             if (!this.currentPiece.isFalling(this.field)) {
+                debugger
                 this.handlePieceStop(this.handleClear.drop);
             }
-            if (this.currentPiece.bottomMost[0] != 0) this.currentPiece.drop(this.field);
-            // this.setGhostPosition();
+            // prevents incoming piece from deleting a piece directly below during its initial render
+            if (this.currentPiece.bottomMost[0] != 0 || this.currentPiece.isFalling(this.field)) this.currentPiece.drop(this.field);
             this.currentPiece.populateField(this.field); // keep only one populate field?
             this.render();
         }
@@ -605,6 +605,7 @@ export default class Game {
 
     gameOver(winner) {
         this.dropSpeed = 0;
+        cancelAnimationFrame(this.opponent.handleClear.drop);
         let gameOverScreen = document.createElement("div");
         gameOverScreen.classList.add("game-over-div");
         
@@ -623,8 +624,9 @@ export default class Game {
         }   
 
         document.body.appendChild(gameOverScreen);
-        this.stopTimer();
+
         this.gameIsOver = true;
+        if (!this.opponent) this.stopTimer();
     }
 
     // multiplayer 
@@ -661,7 +663,6 @@ export default class Game {
     // single player
     startElevating(elevateDelay) {
         this.clearElevateInterval = setInterval(() => {
-            console.log(this.currentPiece);
             this.clearGhostPosition();
             this.currentPiece.clearSelfFromBoard(this.field);
             this.upcomingLines += 1;
