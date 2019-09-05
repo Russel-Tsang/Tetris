@@ -61,7 +61,7 @@ export default class Menu {
         this.fieldContainer1.style.position = 'relative';
         this.fieldContainer1.style.left = '14vw';
         this.game1.keyListener();
-        // this.game1.changeControls();
+        this.game1.changeControls();
         this.game1.play();
         this.game1.startElevating(5000);
         this.game1.adjustElevate();
