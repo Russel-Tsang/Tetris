@@ -47,6 +47,7 @@ export default class MultiplayerContent {
             let p = document.createElement('p');
             let img = document.createElement('img');
             img.classList.add('keyboard-key');
+            if (i === 5 && player === "player2") img.classList.add('shift-key');
 
             p.innerHTML = descriptions[i];
             img.setAttribute('src', `./assets/images/${images[i]}.png`);

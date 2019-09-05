@@ -152,11 +152,15 @@ export default class Game {
     // clears the color classes from the browser field
     clearGhostClass() {
         let fieldColumns = document.querySelectorAll(`.field-column.field-${this.gameNum}`);
-        
+        debugger
         Object.values(this.ghostPosition).forEach(array => {
             array.forEach(coordinate => {
                 let [row, col] = [coordinate[0], coordinate[1]];
-                fieldColumns[col].children[row].classList = this.colors[this.currentPiece.colorCode];
+                let fieldSquare = fieldColumns[col].children[row];
+                debugger
+                if (fieldSquare) {
+                    fieldSquare.classList = this.colors[this.currentPiece.colorCode];
+                }
             })
         });
     }
@@ -336,6 +340,7 @@ export default class Game {
 
     keyListener() {
         document.body.addEventListener("keydown", event => {
+            if (this.gameIsOver) return;
             this.currentPiece.setOuterSquares();
             // this.clearGhostPosition();
             switch(event.which) {
@@ -419,16 +424,15 @@ export default class Game {
         if (lowest < 0) return;
         // base case: if we reach a row that is higher than the highest, then return number of lines that were cleared
         if (lowest < highest) {
+            debugger
             return numLinesCleared;
         };
         // recursive case: 
         // if lowest row does not contain a 0, bring all above rows down one level
         if (!this.field[lowest].includes(0)) {
             this._bringDownField(lowest);
-            // call recursiveClear(lowest, highest + 1);
             return this.clearLines(lowest, highest + 1, numLinesCleared + 1)
-        // if row contains a 0 
-        // call ClearLines(lowest - 1, highest)
+        // if row contains a 0, row is not cleared yet 
         } else if (this.field[lowest].includes(0)) {
             return this.clearLines(lowest - 1, highest, numLinesCleared);
         }
@@ -592,11 +596,8 @@ export default class Game {
     
     play() {
         this.setCurrentPiece();
-        if (this.handleTopPiece() === true) {
-            this.currentPiece.populateField(this.field, "atTop");
-        } else {
-            this.currentPiece.populateField(this.field);
-        }
+        this.handleTopPiece();
+        this.currentPiece.populateField(this.field);
         this.addToCurrentBag();
         this.showCurrentBag();
         if (!this.nextBag.length) this.refillNextBag();
@@ -626,6 +627,7 @@ export default class Game {
 
         document.body.appendChild(gameOverScreen);
         this.stopTimer();
+        this.gameIsOver = true;
     }
 
     // multiplayer 
