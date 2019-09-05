@@ -16,6 +16,7 @@ body {
 /* line up columns next to each other */
 #field-container-1 {
     display: flex;
+    margin-left: 30px;
 }
 
 #field-container-2 {
@@ -369,11 +370,20 @@ img.keyboard-key.space-key {
     color: white;
     width: 300px;
     margin: 0 auto;
+    padding: 10px;
     text-align: center;
     font-size: 36px;
-    border-bottom: 3px white solid;
+    border: 3px white solid;
+    text-decoration: underline;
     margin-top: 80px;
     cursor: pointer;
+}
+
+.close-modal-link:hover {
+    background: rgba(0, 0, 0, .3);
+    border: 3px #d9d9d9 solid;
+    color: #d9d9d9;
+    transition: all .2s;
 }
 
 /* timer */
