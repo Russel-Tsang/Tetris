@@ -17,6 +17,7 @@ export default class SinglePlayerContent {
 
     createAllContent() {
         let allSinglePlayerContent = document.createElement('div');
+        allSinglePlayerContent.classList.add('single-player-content');
         allSinglePlayerContent.appendChild(this.createTimer());
         allSinglePlayerContent.appendChild(this.scoreKeeper.createScoreKeeper());
         allSinglePlayerContent.appendChild(this.createControlsContent());

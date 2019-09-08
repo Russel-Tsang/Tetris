@@ -569,14 +569,26 @@ export default class Game {
 
     handleTopPiece() {
         let atTop = false;
-        try {
-            while (this.field[this.currentPiece.position.bottom[0][0]][3] || this.field[this.currentPiece.position.bottom[0][0]][4] || this.field[this.currentPiece.position.bottom[0][0]][5] || this.field[this.currentPiece.position.bottom[0][0]][6]) {
+        for (let i in this.currentPiece.position.bottom) {
+            let square = this.currentPiece.position.bottom[i];
+            let row = square[0];
+            let col = square[1];
+            if (this.field[row][col]) {
                 this.currentPiece.move("up", this.field);
-                atTop = true;
+                break;
             }
-        } catch {
-            this.gameOver(this.opponent.gameNum);
-        }
+        };
+
+        for (let i in this.currentPiece.position.bottom) {
+            let square = this.currentPiece.position.bottom[i];
+            let row = square[0];
+            let col = square[1];
+            if (this.field[row][col]) {
+                this.gameOver(this.opponent.gameNum);
+                break;
+            }
+        };
+            
         return atTop;
     }
     
@@ -615,6 +627,28 @@ export default class Game {
             score.innerHTML = `${this.scoreKeeper.getScore()} Points`;
             gameOverScreen.append(score);
         }
+
+        // let gameOverOptions = document.createElement('div');
+        // gameOverOptions.classList.add('game-over-options');
+        // let tryAgain = document.createElement('p');
+        // let mainMenu = document.createElement('p');
+        // tryAgain.classList.add('game-over-heading');
+        // mainMenu.classList.add('game-over-heading');
+        // tryAgain.innerHTML = "Try Again";
+        // mainMenu.innerHTML = "Main Menu";
+        // mainMenu.addEventListener('click', () => {
+        //     let fieldContainer1 = document.getElementById('field-container-1');
+        //     let fieldContainer2 = document.getElementById('field-container-2');
+        //     let singlePlayerContent = document.querySelector('.single-player-content');
+        //     let gameOverDiv = document.querySelector('.game-over-div');
+        //     [fieldContainer1, fieldContainer2, singlePlayerContent, gameOverDiv].forEach(item => {
+        //         document.body.removeChild(item);
+        //     });
+        //     document.querySelector('#menu').style.display = "flex";
+        // });
+        // gameOverOptions.append(tryAgain);
+        // gameOverOptions.append(mainMenu);
+        // gameOverScreen.append(gameOverOptions);
 
         document.body.appendChild(gameOverScreen);
 

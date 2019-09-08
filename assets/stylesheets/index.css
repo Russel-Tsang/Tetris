@@ -289,6 +289,19 @@ h2 {
     color: white;
 }
 
+p.game-over-heading {
+    font-size: 40px;
+    cursor: pointer;
+}
+
+.game-over-options {
+    display: flex;
+    width: 100%;
+    justify-content: space-around;
+    text-decoration: underline;
+    margin-top: 30px;
+}
+
 h1 {
     font-size: 90px;
 }
@@ -429,4 +442,5 @@ img.keyboard-key.space-key {
     width: 406px;
     height: 75px;
     padding-left: 10px;
+    border-radius: 10px 10px 0 0;
 }
