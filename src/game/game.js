@@ -7,6 +7,7 @@ import ZPiece from '../pieces/zPiece';
 import LPiece from '../pieces/lPiece';
 import JPiece from '../pieces/jPiece';
 import { adjustQueueHeight } from '../field/queue';
+import ScoreKeeper from '../scorekeeper/scorekeeper';
 
 export default class Game {
     constructor(options) {
@@ -92,27 +93,14 @@ export default class Game {
         this.combo = -1;
         this.tSpin = false;
         this.tSpinStreak = false;
-        this.comboGuide = {
-            0: 0,
-            1: 0, 
-            2: 1,
-            3: 1,
-            4: 1,
-            5: 2,
-            6: 2,
-            7: 3,
-            8: 3,
-            9: 4,
-            10: 4,
-            11: 4,
-            12: 5
-        };
+        this.comboGuide = { 0: 0, 1: 0, 2: 1, 3: 1, 4: 1, 5: 2, 6: 2, 7: 3, 8: 3, 9: 4, 10: 4, 11: 4, 12: 5 };
 
         // single player
         this.startElevating = this.startElevating.bind(this);
         this.clearElevateInterval = '';
         this.elevateDelay = 5000;
         this.clearTimer = '';
+        this.scoreKeeper = new ScoreKeeper();
     }
 
     generateBag() {
@@ -497,6 +485,8 @@ export default class Game {
                     adjustQueueHeight(this.gameNum, 0);
                 }
             } 
+        } else {
+            this.scoreKeeper.addToScore(numLinesCleared);
         }
         // reset tSpin tracker
         this.tSpin = false
@@ -525,7 +515,6 @@ export default class Game {
             this.currentPiece.populateField(this.field);
             this.render();
             if (!this.currentPiece.isFalling(this.field)) {
-                debugger
                 this.handlePieceStop(this.handleClear.drop);
             }
             // prevents incoming piece from deleting a piece directly below during its initial render
@@ -605,7 +594,6 @@ export default class Game {
 
     gameOver(winner) {
         this.dropSpeed = 0;
-        cancelAnimationFrame(this.opponent.handleClear.drop);
         let gameOverScreen = document.createElement("div");
         gameOverScreen.classList.add("game-over-div");
         
@@ -621,12 +609,23 @@ export default class Game {
             winnerHeading.classList.add("game-over-heading");
             winnerHeading.innerHTML = `PLAYER ${winner} WINS`;
             gameOverScreen.append(winnerHeading)
-        }   
+        } else {
+            let score = document.createElement('h2');
+            score.classList.add("game-over-heading");
+            score.innerHTML = `${this.scoreKeeper.getScore()} Points`;
+            gameOverScreen.append(score);
+        }
 
         document.body.appendChild(gameOverScreen);
 
         this.gameIsOver = true;
-        if (!this.opponent) this.stopTimer();
+        if (this.opponent) {
+            cancelAnimationFrame(this.opponent.handleClear.drop);
+        } else {
+            this.stopTimer();
+            clearInterval(this.clearElevateInterval);
+            clearInterval(this.clearElevation);
+        }
     }
 
     // multiplayer 
@@ -660,7 +659,7 @@ export default class Game {
         this.render();
     }
 
-    // single player
+    // single player logic
     startElevating(elevateDelay) {
         this.clearElevateInterval = setInterval(() => {
             this.clearGhostPosition();
@@ -674,7 +673,7 @@ export default class Game {
     }
 
     adjustElevate() {
-        setInterval(() => {
+        this.clearElevation = setInterval(() => {
             if (this.clearElevateInterval) clearInterval(this.clearElevateInterval);
             if (this.elevateDelay > 2000) this.elevateDelay -= 200;
             this.startElevating(this.elevateDelay);

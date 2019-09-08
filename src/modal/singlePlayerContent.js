@@ -1,3 +1,5 @@
+import ScoreKeeper from '../scorekeeper/scorekeeper';
+
 export default class SinglePlayerContent {
     constructor() {
         this.keys = {
@@ -9,13 +11,16 @@ export default class SinglePlayerContent {
             'shift_key': 'HOLD',
             'space_key': 'HARDDROP',
         };
+
+        this.scoreKeeper = new ScoreKeeper();
     }
 
-    createTimerAndControls() {
-        let timerAndControls = document.createElement('div');
-        timerAndControls.appendChild(this.createTimer());
-        timerAndControls.appendChild(this.createControlsContent());
-        document.body.append(timerAndControls);
+    createAllContent() {
+        let allSinglePlayerContent = document.createElement('div');
+        allSinglePlayerContent.appendChild(this.createTimer());
+        allSinglePlayerContent.appendChild(this.scoreKeeper.createScoreKeeper());
+        allSinglePlayerContent.appendChild(this.createControlsContent());
+        document.body.append(allSinglePlayerContent);
     }
 
     createControlsContent() {

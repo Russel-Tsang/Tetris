@@ -56,7 +56,7 @@ export default class Menu {
     renderSinglePlayer() {
         document.body.removeChild(this.menu);
         document.body.style.justifyContent = 'none';
-        this.singlePlayerContent.createTimerAndControls();
+        this.singlePlayerContent.createAllContent();
         this.field1.createCompleteField(this.fieldContainer1);
         this.fieldContainer1.style.position = 'relative';
         this.fieldContainer1.style.left = '14vw';
