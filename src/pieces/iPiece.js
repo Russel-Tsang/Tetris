@@ -7,7 +7,7 @@ export default class IPiece extends Piece {
         this.position = {
             top: [],
             middle: [],
-            bottom: [[1, 3], [1, 4], [1, 5], [1, 6]]
+            bottom: [[0, 3], [0, 4], [0, 5], [0, 6]]
         };
         this.colorCode = 2;
         this.turningPoint = [1, 4];
