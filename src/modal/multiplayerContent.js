@@ -1,5 +1,5 @@
 export default class MultiplayerContent {
-    constructor(props) {
+    constructor() {
         this.keys = {
             player1: {
                 'w_key': 'TURN RIGHT',
