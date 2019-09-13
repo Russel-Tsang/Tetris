@@ -1,49 +1,72 @@
 # Tetris
 
+https://russel-tsang.github.io/Tetris/
+
 ## Background and Overview
-Tetris is a classic tile-based video game that has since evolved into more high-speed and feature-filled versions. However, initial foundations are still there:
+Tetris is a classic tile-based video game that has since evolved into more high-speed and feature-filled versions. However, the initial foundations are still there:
 <img height=20% width=70% src="https://i0.wp.com/mindyourdecisions.com/blog/wp-content/uploads/2018/05/tetris-riddle-pieces.png?resize=600%2C165&ssl=1"/>
 * game pieces, or "tetriminoes", are randomly dropped onto a grid-based board
 * lines are cleared by complete filling a row 
-* speed of single-player mode increases as the player clears more lines 
 * player loses when pieces fill up to the top of the field
 
-## Functionality and MVP Features
-Users will be able to
-* start, pause, and restart the simulation
-* drop tetriminoes slowly (soft-drop) or instantly (hard-drop)
+## Features
+* start, pause, and restart
+* play against local opponent
 * view upcoming pieces
-* clear lines 
+* view ghost piece of current piece (to show possible placements)
 
-## Wireframe
-<img height=50% width=50% src="https://aa-file-upload-dev.s3.amazonaws.com/Screen+Shot+2019-08-13+at+12.05.14+AM.png"/>
-
-## Architectures and Technologies 
-* Vanilla JS to simulate piece movement and overall game logic
+## Technologies 
+* Vanilla JavaScript to simulate piece movement and overall game logic
 * Webpack to bundle various and execute scripts
-* Libraries as implementation needs are discovered
 
-## Implementation Timeline
-Day 1: Create basic simulation:
-* Create the structures for the board and game pieces
-* Generate random pieces and simulate piece movement 
-*	Allow pieces to appropriately stack on top of each other
+## Example Code 
+### Visuals
+The 'field' that sets the foundation for the whole game is a 10x20 2D array, corresponding with a 10x20 grid made of ULs on the DOM:
+```javascript
+generateField() {
+    let field = [];
+    for (let i = 0; i < 20; i++) {
+        let row = [0,0,0,0,0,0,0,0,0,0];
+        field.push(row);
+    }
+    return field;
+}
+```
+As pieces move, instance methods allow them to populate the field with their respective color codes, also removing the color codes from their previous positions:
+``` javascript
+populateField(field) {
+    let coordinateArrays = [...this.position.top, ...this.position.middle, ...this.position.bottom];
 
-Day 2: Implement logic:
-*	End the game when pieces reach the top of the board
-*	Allow user to pause and resume game
-*	Allowing pieces to turn based on keyboard movement
+    coordinateArrays.forEach(array => {
+        let [row, col] = [array[0], array[1]];
+        if ((col >= 0 && col <= 19) && (row >= 0 && row <= 19)) field[row][col] = this.colorCode;
+    });
 
-Day 3: Speed Tuning:
-* Allow user to change speed of piece movement 
-* Force pieces to drop faster as the player advances through levels	
+    this.removeSquares.forEach(positionArray => {
+        let [row, col] = [positionArray[0], positionArray[1]];
+        if ((col >= 0 && col <= 19) && (row >= 0 && row <= 19)) field[row][col] = 0;
+    });
+}
+```
+The field instance then calls its render method to manipulate the DOM based on the 2D array and its values:
+```javascript 
+render() {
+    let fieldColumns = document.querySelectorAll(`.field-column.field-${this.gameNum}`);
+    this.field.forEach((row, rowIdx) => {
+        row.forEach((__, colIdx) => {
+            let squareValue = this.field[rowIdx][colIdx];
+            if (squareValue === 'x') {
+                fieldColumns[colIdx].children[rowIdx].classList.add(`x-${this.colors[this.currentPiece.colorCode]}`);
+            } else if (squareValue) {
+                fieldColumns[colIdx].children[rowIdx].classList.add(this.colors[squareValue]);
+                fieldColumns[colIdx].children[rowIdx].classList.remove(`x-${this.colors[this.currentPiece.colorCode]}`);
+            } else {
+                fieldColumns[colIdx].children[rowIdx].classList = "";
+            }
+        });
+    });
+}
+```
 
-Day 4: Design:
-* Add links to GitHub and LinkedIn
-* Add possible style improvements
-* Adding a home/menu page
-
-Bonus Features
-*	Users can play against each other with a two player mode
-* Users can attack with/block lines as they are cleared
-*	Create sound effects in response to piece-drops
+### Future Implementations
+* Connect with communications protocol such as WebSocket to allow online multiplayer
