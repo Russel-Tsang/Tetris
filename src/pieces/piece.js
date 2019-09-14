@@ -32,20 +32,18 @@ export default class Piece {
     }
 
     populateField(field) {
-        let coordinateArrays = Object.values(this.position);
+        // let coordinateArrays = Object.values(this.position);
+        let coordinateArrays = [...this.position.top, ...this.position.middle, ...this.position.bottom];
 
         coordinateArrays.forEach(array => {
-            array.forEach(coordinate => {
-                let [row, col] = [coordinate[0], coordinate[1]];
-                if ((col >= 0 && col <= 19) && (row >= 0 && row <= 19)) field[row][col] = this.colorCode;
-            })
+            let [row, col] = [array[0], array[1]];
+            if ((col >= 0 && col <= 19) && (row >= 0 && row <= 19)) field[row][col] = this.colorCode;
         });
 
         this.removeSquares.forEach(positionArray => {
             let [row, col] = [positionArray[0], positionArray[1]];
             if ((col >= 0 && col <= 19) && (row >= 0 && row <= 19)) field[row][col] = 0;
         });
-
     }
 
     // compares two arrays of coordinates and check if they have the same content in the same order

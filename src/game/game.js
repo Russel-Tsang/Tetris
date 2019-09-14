@@ -117,7 +117,7 @@ export default class Game {
 
     setField() {
         let field = new Field();
-        return field._generateField();
+        return field.generateField();
     }
 
     // take piece from currentBag and set it as the current piece
@@ -310,7 +310,7 @@ export default class Game {
         // if (this.currentPiece.rightMost[1] > 9 || this.currentPiece.leftMost[1] < 0) return;
         let fieldColumns = document.querySelectorAll(`.field-column.field-${this.gameNum}`);
         this.field.forEach((row, rowIdx) => {
-            row.forEach((col, colIdx) => {
+            row.forEach((__, colIdx) => {
                 let squareValue = this.field[rowIdx][colIdx];
                 if (squareValue === 'x') {
                     fieldColumns[colIdx].children[rowIdx].classList.add(`x-${this.colors[this.currentPiece.colorCode]}`);
@@ -627,28 +627,6 @@ export default class Game {
             score.innerHTML = `${this.scoreKeeper.getScore()} Points`;
             gameOverScreen.append(score);
         }
-
-        // let gameOverOptions = document.createElement('div');
-        // gameOverOptions.classList.add('game-over-options');
-        // let tryAgain = document.createElement('p');
-        // let mainMenu = document.createElement('p');
-        // tryAgain.classList.add('game-over-heading');
-        // mainMenu.classList.add('game-over-heading');
-        // tryAgain.innerHTML = "Try Again";
-        // mainMenu.innerHTML = "Main Menu";
-        // mainMenu.addEventListener('click', () => {
-        //     let fieldContainer1 = document.getElementById('field-container-1');
-        //     let fieldContainer2 = document.getElementById('field-container-2');
-        //     let singlePlayerContent = document.querySelector('.single-player-content');
-        //     let gameOverDiv = document.querySelector('.game-over-div');
-        //     [fieldContainer1, fieldContainer2, singlePlayerContent, gameOverDiv].forEach(item => {
-        //         document.body.removeChild(item);
-        //     });
-        //     document.querySelector('#menu').style.display = "flex";
-        // });
-        // gameOverOptions.append(tryAgain);
-        // gameOverOptions.append(mainMenu);
-        // gameOverScreen.append(gameOverOptions);
 
         document.body.appendChild(gameOverScreen);
 

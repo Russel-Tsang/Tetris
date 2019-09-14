@@ -7,7 +7,7 @@ export default class Field {
         this.fieldNum = fieldNum;
     }
     
-    _generateField() {
+    generateField() {
         let field = [];
         for (let i = 0; i < 20; i++) {
             let row = [0,0,0,0,0,0,0,0,0,0];
