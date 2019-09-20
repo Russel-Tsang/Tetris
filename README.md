@@ -3,7 +3,7 @@
 https://russel-tsang.github.io/Tetris/
 
 ## Background and Overview
-Tetris is a classic tile-based video game that has since evolved into more high-speed and feature-filled versions. However, the initial foundations are still there:
+Tetris is a classic tile-based video game that has since evolved into more high-speed and feature-filled versions. However, the initial foundations are still there.
 <img src="https://github.com/Russel-Tsang/Tetris/blob/master/assets/images/multiplayer_gif.gif"/>
 * game pieces, or "tetriminoes", are randomly dropped onto a grid-based board
 * lines are cleared by complete filling a row 
