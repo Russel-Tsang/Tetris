@@ -345,71 +345,69 @@ export default class Game {
     }
 
     handleKeyPress(event) {
-        
-            if (this.gameIsOver || this.opponent.gameIsOver) return;
-            this.currentPiece.setOuterSquares();
-            // this.clearGhostPosition();
-            switch (event.which) {
-                // up key
-                case this.controls.turnRight:
-                    // pass field so piece can check field wall before turning
-                    this.clearGhostPosition();
-                    this.tSpin = this.currentPiece.move("turnRight", this.field);
-                    this.currentPiece.populateField(this.field);
-                    this.setGhostPosition();
-                    break;
-                // C key
-                case this.controls.turnLeft:
-                    // pass field so piece can check field wall before turning
-                    this.clearGhostPosition();
-                    this.currentPiece.move("turnLeft", this.field);
-                    this.currentPiece.populateField(this.field);
-                    this.setGhostPosition();
-                    break;
-                // left key
-                case this.controls.left:
-                    this.keyHeld.left = true;
-                    if (this.currentPiece.leftSideBlocked(this.field)) break;
-                    this.movePiece("left");
-                    break;
-                // right key
-                case this.controls.right:
-                    this.keyHeld.right = true;
-                    if (this.currentPiece.rightSideBlocked(this.field)) break;
-                    this.movePiece("right");
-                    break;
-                // down key
-                case this.controls.softDrop:
-                    this.keyHeld.down = true;
-                    this.movePiece("down");
-                    break;
-                // shift key
-                case this.controls.hold:
-                    this.clearGhostPosition();
-                    this.hold();
-                    this.currentPiece.populateField(this.field);
-                    this.setGhostPosition();
-                    break;
-                // space bar
-                case this.controls.hardDrop:
-                    // this.render();
-                    this.clearGhostPosition();
-                    this.currentPiece.hardDrop(this.field);
-                    this.render();
-                    this.currentPiece.populateField(this.field);
-                    this.handlePieceStop(this.handleClear.drop);
-                    break;
-                // P key
-                case 80:
-                    this.isPaused ? this.dropPiece(this.dropSpeed) : cancelAnimationFrame(this.handleClear.drop);
-                    this.isPaused = !this.isPaused;
-                    break;
-                default:
-                    break;
-            }
-            this.currentPiece.setOuterSquares();
-            this.render();
-
+        if (this.gameIsOver || this.opponent.gameIsOver) return;
+        this.currentPiece.setOuterSquares();
+        // this.clearGhostPosition();
+        switch (event.which) {
+            // up key
+            case this.controls.turnRight:
+                // pass field so piece can check field wall before turning
+                this.clearGhostPosition();
+                this.tSpin = this.currentPiece.move("turnRight", this.field);
+                this.currentPiece.populateField(this.field);
+                this.setGhostPosition();
+                break;
+            // C key
+            case this.controls.turnLeft:
+                // pass field so piece can check field wall before turning
+                this.clearGhostPosition();
+                this.currentPiece.move("turnLeft", this.field);
+                this.currentPiece.populateField(this.field);
+                this.setGhostPosition();
+                break;
+            // left key
+            case this.controls.left:
+                this.keyHeld.left = true;
+                if (this.currentPiece.leftSideBlocked(this.field)) break;
+                this.movePiece("left");
+                break;
+            // right key
+            case this.controls.right:
+                this.keyHeld.right = true;
+                if (this.currentPiece.rightSideBlocked(this.field)) break;
+                this.movePiece("right");
+                break;
+            // down key
+            case this.controls.softDrop:
+                this.keyHeld.down = true;
+                this.movePiece("down");
+                break;
+            // shift key
+            case this.controls.hold:
+                this.clearGhostPosition();
+                this.hold();
+                this.currentPiece.populateField(this.field);
+                this.setGhostPosition();
+                break;
+            // space bar
+            case this.controls.hardDrop:
+                // this.render();
+                this.clearGhostPosition();
+                this.currentPiece.hardDrop(this.field);
+                this.render();
+                this.currentPiece.populateField(this.field);
+                this.handlePieceStop(this.handleClear.drop);
+                break;
+            // P key
+            case 80:
+                this.isPaused ? this.dropPiece(this.dropSpeed) : cancelAnimationFrame(this.handleClear.drop);
+                this.isPaused = !this.isPaused;
+                break;
+            default:
+                break;
+        }
+        this.currentPiece.setOuterSquares();
+        this.render();
 }
 
     clearLines(lowest, highest, numLinesCleared) {
@@ -627,6 +625,8 @@ export default class Game {
         this.gameIsOver = false;
         if (this.opponent) this.opponent.gameIsOver = false;
         this.dropSpeed = 1;
+        this.upcomingLines = 0;
+        adjustQueueHeight(this.gameNum, 0);
         this.play();
         let gameOverDiv = document.querySelector('.game-over-div');
         if (gameOverDiv) gameOverDiv.remove();
