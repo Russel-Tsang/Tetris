@@ -62,16 +62,15 @@ export default class Menu {
         this.fieldContainer1.style.position = 'relative';
         this.fieldContainer1.style.left = '14vw';
         this.game1.keyListener();
-        this.game1.changeControls();
-        this.game1.play();
-        this.game1.startElevating(5000);
-        this.game1.adjustElevate();
+        this.game1.changeControls('single-player');
+        this.game1.restartGame();
         this.singlePlayerContent.createTimer();
-        this.game1.startTimer();
     }
 
     renderMultiplayer() {
-        document.body.removeChild(this.menu);
+        this.game1.changeControls('multiplayer');
+        this.fieldContainer1.style.left = '0vw';
+        this.menu.style.display = "none";
         this.field1.createCompleteField(this.fieldContainer1);
         this.game1.keyListener();
 
@@ -106,14 +105,5 @@ export default class Menu {
             this.multiplayerMode.startMultiplayer();
         });
         return closeLink;
-    }
-
-    returnToMenu() {
-        let fieldContainer1 = document.getElementById('field-container-1');
-        let fieldContainer2 = document.getElementById('field-container-2');
-        let singlePlayerContent = document.querySelector('single-player-content');
-        [fieldContainer1, fieldContainer2, singlePlayerContent].forEach(item => {
-            document.body.remove(item);
-        });
     }
 }

@@ -21,6 +21,11 @@ export default class ScoreKeeper {
         scoreKeeper.innerHTML = score;
     }
 
+    resetScore() {
+        let scoreKeeper = document.querySelector('.scorekeeper');
+        scoreKeeper.innerHTML = 0;
+    }
+
     getScore() {
         let scoreKeeper = document.querySelector('.scorekeeper');
         return scoreKeeper.innerHTML;

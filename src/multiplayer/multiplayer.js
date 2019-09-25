@@ -7,7 +7,7 @@ export default class Multiplayer {
     startMultiplayer() {
         this.player1.setOpponent(this.player2);
         this.player2.setOpponent(this.player1);
-        this.player1.play();
-        this.player2.play();
+        this.player1.restartGame();
+        this.player2.restartGame();
     }
 }

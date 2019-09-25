@@ -86,6 +86,4 @@ export default class SinglePlayerContent {
         [minutes, colon, seconds].forEach(ele => timer.appendChild(ele));
         return timer;
     }
-
-    
 }

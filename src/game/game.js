@@ -49,6 +49,8 @@ export default class Game {
         this.drop = this.drop.bind(this);
         this.move = this.move.bind(this);
         this.movePiece = this.movePiece.bind(this);
+        this.restartGame = this.restartGame.bind(this);
+        this.handleKeyPress = this.handleKeyPress.bind(this);
 
         // keep track of the following variables for requestAnimationFrame throttling
         this.animate = {
@@ -325,11 +327,29 @@ export default class Game {
     }
 
     keyListener() {
-        document.body.addEventListener("keydown", event => {
+        document.body.addEventListener("keydown", this.handleKeyPress);
+
+        document.body.addEventListener("keyup", event => {
+            switch (event.which) {
+                case this.controls.right: 
+                    this.keyHeld.right = false;
+                    break;
+                case this.controls.left: 
+                    this.keyHeld.left = false;
+                    break;
+                case this.controls.softDrop: 
+                    this.keyHeld.down = false;
+                    break;  
+            }
+        });
+    }
+
+    handleKeyPress(event) {
+        
             if (this.gameIsOver || this.opponent.gameIsOver) return;
             this.currentPiece.setOuterSquares();
             // this.clearGhostPosition();
-            switch(event.which) {
+            switch (event.which) {
                 // up key
                 case this.controls.turnRight:
                     // pass field so piece can check field wall before turning
@@ -364,7 +384,7 @@ export default class Game {
                     this.movePiece("down");
                     break;
                 // shift key
-                case this.controls.hold: 
+                case this.controls.hold:
                     this.clearGhostPosition();
                     this.hold();
                     this.currentPiece.populateField(this.field);
@@ -389,22 +409,8 @@ export default class Game {
             }
             this.currentPiece.setOuterSquares();
             this.render();
-        });
 
-        document.body.addEventListener("keyup", event => {
-            switch (event.which) {
-                case this.controls.right: 
-                    this.keyHeld.right = false;
-                    break;
-                case this.controls.left: 
-                    this.keyHeld.left = false;
-                    break;
-                case this.controls.softDrop: 
-                    this.keyHeld.down = false;
-                    break;  
-            }
-        });
-    }
+}
 
     clearLines(lowest, highest, numLinesCleared) {
         if (lowest < 0) return;
@@ -583,7 +589,7 @@ export default class Game {
             let square = this.currentPiece.position.bottom[i];
             let row = square[0];
             let col = square[1];
-            if (this.field[row][col]) {
+            if (this.field[row] && this.field[row][col]) {
                 this.gameOver(this.opponent.gameNum);
                 break;
             }
@@ -602,6 +608,43 @@ export default class Game {
         this.setGhostPosition();
         // drop piece at given fps
         this.dropPiece(this.dropSpeed);    
+    }
+
+    restartGame() {
+        if (!this.opponent) {
+            this.scoreKeeper.resetScore();
+            let minutes = document.querySelector('.minutes');
+            let seconds = document.querySelector('.seconds');
+            minutes.innerHTML = '0';
+            seconds.innerHTML = '00';
+            this.startTimer();
+            this.startElevating(5000);
+            this.adjustElevate();
+        }
+        let field = new Field;
+        this.field = field.generateField();
+        this.render();
+        this.gameIsOver = false;
+        if (this.opponent) this.opponent.gameIsOver = false;
+        this.dropSpeed = 1;
+        this.play();
+        let gameOverDiv = document.querySelector('.game-over-div');
+        if (gameOverDiv) gameOverDiv.remove();
+    }
+
+    returnToMenu() {
+        document.querySelector('.game-over-div').remove();
+        let field1 = document.querySelector('#field-container-1');
+        let field2 = document.querySelector('#field-container-2');
+        while (field1.firstChild) {
+            field1.removeChild(field1.firstChild);
+        }
+        while (field2.firstChild) {
+            field2.removeChild(field2.firstChild);
+        }
+        let singlePlayerContent = document.querySelector('.single-player-content');
+        if (singlePlayerContent) singlePlayerContent.remove();
+        document.getElementById('menu').setAttribute("style", "display: visible");
     }
 
     gameOver(winner) {
@@ -625,8 +668,29 @@ export default class Game {
             let score = document.createElement('h2');
             score.classList.add("game-over-heading");
             score.innerHTML = `${this.scoreKeeper.getScore()} Points`;
+
             gameOverScreen.append(score);
         }
+
+        let gameOptions = document.createElement('div');
+        gameOptions.classList.add('game-over-options');
+        let restart = document.createElement('h2');
+        restart.classList.add('game-over-heading', 'link');
+        restart.innerHTML = 'Play Again';
+        restart.addEventListener('click', () => {
+            this.restartGame();
+            if (this.opponent) this.opponent.restartGame();
+        });
+
+        let mainMenu = document.createElement('h2');
+        mainMenu.classList.add('game-over-heading', 'link');
+        mainMenu.innerHTML = 'Main Menu';
+        mainMenu.addEventListener('click', this.returnToMenu);
+
+        gameOptions.append(restart);
+        gameOptions.append(mainMenu);
+
+        gameOverScreen.append(gameOptions);
 
         document.body.appendChild(gameOverScreen);
 
@@ -712,7 +776,11 @@ export default class Game {
         clearInterval(this.clearTimer);
     }
 
-    changeControls() {
-        this.controls = { left: 37, right: 39, turnRight: 38, softDrop: 40, hold: 16, turnLeft: 67, hardDrop: 32 }
+    changeControls(mode) {
+        if (mode === 'single-player') {
+            this.controls = { left: 37, right: 39, turnRight: 38, softDrop: 40, hold: 16, turnLeft: 67, hardDrop: 32 }
+        } else {
+            this.controls = { left: 65, right: 68, turnRight: 87, softDrop: 83, hold: 81, turnLeft: 192, hardDrop: 49 }
+        }
     }
 }
