@@ -72,11 +72,7 @@ export default class Menu {
         this.fieldContainer1.style.left = '0vw';
         this.menu.style.display = "none";
         this.field1.createCompleteField(this.fieldContainer1);
-        this.game1.keyListener();
-
         this.field2.createCompleteField(this.fieldContainer2);
-        this.game2.keyListener();
-
         let controlsContainer = document.createElement('div');
         controlsContainer.classList.add('controls-container')
         controlsContainer.appendChild(this.multiplayerContent.createControlsContent('player1'));
@@ -102,6 +98,8 @@ export default class Menu {
 
         closeLink.addEventListener('click', () => {
             this.modal.remove();
+            this.game1.keyListener();
+            this.game2.keyListener();
             this.multiplayerMode.startMultiplayer();
         });
         return closeLink;
