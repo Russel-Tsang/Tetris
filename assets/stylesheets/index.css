@@ -302,6 +302,11 @@ p.game-over-heading {
     margin-top: 30px;
 }
 
+.game-over-options .game-over-heading {
+    font-size: 40px;
+    cursor: pointer;
+}
+
 h1 {
     font-size: 90px;
 }
